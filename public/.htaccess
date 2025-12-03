@@ -1,0 +1,4 @@
+RewriteEngine On
+
+# Matches all URLs starting with /api to our DB php file
+RewriteRule ^api/.*$ api.php [L]
