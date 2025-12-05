@@ -3,21 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trips</title>
-    <script src="js/trip.js"></script>
+    <title>Ravel – Trips</title>
+    <script src="js/trip.js" defer></script>
     <link rel="stylesheet" href="css/custom.css">
 </head>
 <body>
-    <h1>Trips</h1>
 
-    <a href="home.html">Home</a>
-    <a href="reviews.html">Reviews</a>
-    <a href="locations.html">Locations</a>
-    <a href="trip.html">Trips</a>
+    <div class="app-shell">
 
-    <ul id="trip_list">
-    </ul>
+        <header class="app-header">
+            <div class="app-title">Ravel<span>.</span></div>
+            <nav class="nav">
+                <a href="home.html">Home</a>
+                <a href="reviews.html">Reviews</a>
+                <a href="locations.html">Locations</a>
+                <a href="trip.html">Trips</a>
+                <a href="list.html">Lists</a>
+            </nav>
+        </header>
 
-    <button id="add-trip">Add Trip</button>
+        <main class="page">
+
+            <h1>Your Trips</h1>
+            <p class="page-subtitle">
+                View, update, or create new trips to document your adventures.
+            </p>
+
+            <div class="form-row" style="justify-content: flex-end; margin-bottom: 1rem;">
+                <button id="add-trip" class="button">Add Trip</button>
+            </div>
+
+            <ul id="trip_list" class="list mt-md"></ul>
+
+            <p id="trip-empty" class="text-muted mt-sm" style="display:none;">
+                No trips found. Create your first trip!
+            </p>
+
+        </main>
+    </div>
+
 </body>
 </html>
