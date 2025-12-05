@@ -3,45 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Profile</title>
-    <script src="js/userprofile.js"></script>
+    <title>Ravel - User Profile</title>
+    <script src="js/userprofile.js" defer></script>
     <link rel="stylesheet" href="css/custom.css">
 </head>
 <body>
-    <h1>User Profile</h1>
 
-    <a href="home.html">Home</a>
-    <a href="reviews.html">Reviews</a>
-    <a href="locations.html">Locations</a>
-    <a href="trip.html">Trips</a>
-    <a href="list.html">Lists</a>
+    <div class="app-shell">
 
-    <div id="user-info">
+        <header class="app-header">
+            <div class="app-title">Ravel<span>.</span></div>
+            <nav class="nav">
+                <a href="home.html">Home</a>
+                <a href="reviews.html">Reviews</a>
+                <a href="locations.html">Locations</a>
+                <a href="trip.html">Trips</a>
+                <a href="list.html">Lists</a>
+                <a href="userprofile.html">Profile</a>
+            </nav>
+        </header>
 
-    </div>
+        <main class="page">
 
-    <div style="display: flex; gap: 20px; margin-top: 20px;">
+            <h1>User Profile</h1>
+            <p class="page-subtitle">
+                View your account details, trips, reviews, and saved lists.
+            </p>
 
+            <section id="user-info"
+                     class="card"
+                     style="margin-bottom: 1.5rem; padding: 1.25rem;">
+            </section>
 
-        <div style="flex: 1;">
-            <h2>Trips</h2>
-            <ul id="user-trips">
-            </ul>
-        </div>
+            <div style="display: flex; gap: 1.25rem; flex-wrap: wrap;">
 
-        <div style="flex: 1;">
-            <h2>Reviews</h2>
-            <ul id="user-reviews">
-            </ul>
-        </div>
+                <div class="card" style="flex: 1; min-width: 260px;">
+                    <h2 style="margin-top: 0;">Trips</h2>
+                    <ul id="user-trips" class="list mt-sm"></ul>
+                </div>
 
+                <div class="card" style="flex: 1; min-width: 260px;">
+                    <h2 style="margin-top: 0;">Reviews</h2>
+                    <ul id="user-reviews" class="list mt-sm"></ul>
+                </div>
 
-        <div style="flex: 1;">
-            <h2>Lists</h2>
-            <ul id="user-lists">
-            </ul>
-        </div>
+                <div class="card" style="flex: 1; min-width: 260px;">
+                    <h2 style="margin-top: 0;">Lists</h2>
+                    <ul id="user-lists" class="list mt-sm"></ul>
+                </div>
 
+            </div>
+
+        </main>
     </div>
 
 </body>
