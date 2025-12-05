@@ -29,6 +29,28 @@ switch ($segments[1]) {
         send_success();
         break;
     // Add more cases here for different endpoints
+    
+    case 'exportUserReviews':
+        $username = $_SESSION['username'] ?? null;
+        if (!$username) {
+            send_error("Not logged in");
+            exit();
+        }
+    
+        $rows = getTripsExportForUser($username);
+    
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="user_reviews.csv"');
+    
+        $output = fopen('php://output', 'w');
+        fputcsv($output, array_keys($rows[0]));
+    
+        foreach ($rows as $row) {
+            fputcsv($output, $row);
+        }
+    
+        fclose($output);
+        break;
     default:
         send_error('Unknown endpoint');
 }
