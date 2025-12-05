@@ -3,18 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reviews</title>
-    <script src="js/reviews.js"></script>
+    <title>Ravel - Reviews</title>
+    <script src="js/reviews.js" defer></script>
     <link rel="stylesheet" href="css/custom.css">
 </head>
 <body>
-    <h1>See all Reviews</h1>
+    <div class="app-shell">
+        <header class="app-header">
+            <div class="app-title">Ravel<span>.</span></div>
+            <nav class="nav">
+                <a href="home.html">Home</a>
+                <a href="reviews.html">Reviews</a>
+                <a href="locations.html">Locations</a>
+            </nav>
+        </header>
 
-    <a href="home.html">Home</a>
-    <a href="reviews.html">Reviews</a>
-    <a href="locations.html">Locations</a>
+        <main class="page">
+            <h1>Reviews</h1>
+            <p class="page-subtitle">
+                Browse trip reviews and itineraries. Search by review text, trip title, or location.
+            </p>
 
-    <ul id="review_list">
-    </ul>
+            <form id="review-search-form" class="form-row">
+                <input
+                    type="text"
+                    id="review-search-input"
+                    class="input"
+                    placeholder="Search reviews..."
+                >
+                <button type="submit" class="button button-secondary">Search</button>
+                <button type="button" id="reset-reviews" class="button button-secondary">Reset</button>
+            </form>
+
+            <ul id="review_list" class="list mt-md"></ul>
+            <p id="review-empty" class="text-muted mt-sm" style="display:none;">
+                No reviews found. Try another search.
+            </p>
+        </main>
+    </div>
 </body>
 </html>
