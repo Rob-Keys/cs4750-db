@@ -3,42 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Review</title>
-    <script src="js/newreview.js"></script>
+    <title>Ravel - Write Review</title>
+    <script src="js/newreview.js" defer></script>
     <link rel="stylesheet" href="css/custom.css">
 </head>
 <body>
-    <h1>Write Review</h1>
 
-    <a href="home.html">Home</a>
-    <a href="reviews.html">Reviews</a>
-    <a href="locations.html">Locations</a>
+    <div class="app-shell">
 
-    <form id="new-review-form">
+        <header class="app-header">
+            <div class="app-title">Ravel<span>.</span></div>
+            <nav class="nav">
+                <a href="home.html">Home</a>
+                <a href="reviews.html">Reviews</a>
+                <a href="locations.html">Locations</a>
+                <a href="trip.html">Trips</a>
+                <a href="list.html">Lists</a>
+            </nav>
+        </header>
 
-        <label for="trip-select">Select Trip:</label><br>
-        <select id="trip-select">
-            <option value="">Loading trips</option>
-        </select>
-        <br><br>
+        <main class="page" style="max-width: 600px; margin: 0 auto;">
 
-        <label for="review-rating">Rating:</label><br>
-        <select id="review-rating">
-            <option value="">Select rating</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-        </select>
-        <br><br>
+            <h1>Write a Review</h1>
+            <p class="page-subtitle">
+                Share your experience from a recent trip.
+            </p>
 
-        <label for="review-text">Review Text:</label><br>
-        <textarea id="review-text" rows="5" cols="40"></textarea>
-        <br><br>
+            <form id="new-review-form" style="margin-top: 1.25rem;">
 
-        <button type="submit" id="submit-review">Submit Review</button>
-    </form>
+                <div class="form-row" style="flex-direction: column;">
+                    <label for="trip-select" class="text-muted">Select Trip</label>
+                    <select id="trip-select" class="select">
+                        <option value="">Loading trips...</option>
+                    </select>
+                </div>
+
+                <div class="form-row" style="flex-direction: column;">
+                    <label for="review-rating" class="text-muted">Rating</label>
+                    <select id="review-rating" class="select">
+                        <option value="">Select rating</option>
+                        <option value="1">1 - Poor</option>
+                        <option value="2">2 - Fair</option>
+                        <option value="3">3 - Good</option>
+                        <option value="4">4 - Very Good</option>
+                        <option value="5">5 - Excellent</option>
+                    </select>
+                </div>
+
+                <div class="form-row" style="flex-direction: column;">
+                    <label for="review-text" class="text-muted">Review Text</label>
+                    <textarea id="review-text"
+                              class="input"
+                              style="min-height: 140px; resize: vertical;"
+                              placeholder="Write your review here..."></textarea>
+                </div>
+
+                <button type="submit"
+                        id="submit-review"
+                        class="button"
+                        style="margin-top: 1rem; width: 100%; justify-content: center;">
+                    Submit Review
+                </button>
+
+            </form>
+        </main>
+    </div>
 
 </body>
 </html>
+
