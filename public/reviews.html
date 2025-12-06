@@ -4,21 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ravel - Reviews</title>
+    <script src="js/shared.js" defer></script>
     <script src="js/reviews.js" defer></script>
     <link rel="stylesheet" href="css/custom.css">
 </head>
 <body>
     <div class="app-shell">
         <header class="app-header">
-            <div class="app-title">Ravel<span>.</span></div>
-            <nav class="nav">
-                <a href="home.html">Home</a>
-                <a href="reviews.html">Reviews</a>
-                <a href="locations.html">Locations</a>
-                <a href="trip.html">Trips</a>
-                <a href="list.html">Lists</a>
-                
-            </nav>
         </header>
 
         <main class="page">
@@ -26,6 +18,10 @@
             <p class="page-subtitle">
                 Browse trip reviews and itineraries. Search by review text, trip title, or location.
             </p>
+
+            <div class="form-row" style="justify-content: flex-end; margin-bottom: 0.75rem;">
+                <a href="newreview.html" class="button">Write Review</a>
+            </div>
 
             <form id="review-search-form" class="form-row">
                 <input

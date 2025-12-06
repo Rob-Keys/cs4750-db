@@ -15,15 +15,9 @@ switch ($segments[1]) {
     case 'initialize_db':
         initialize_db();
         exit();
-        break;
     case 'destroy_db':
         destroy_db();
         exit();
-        break;
-    case 'createUser':
-        createUser($post_data['username'], $post_data['email'], $post_data['password_hash'], $post_data['first_name'], $post_data['last_name']);
-        send_success();
-        break;
     case 'searchLocations':
         $locations = searchLocations($post_data['q'], $post_data['limit'], $post_data['offset']);
         send_json_response(['data' => $locations]);
@@ -32,14 +26,34 @@ switch ($segments[1]) {
         $reviews = searchReviews($post_data['q'], $post_data['limit'], $post_data['offset']);
         send_json_response(['data' => $reviews]);
         break;
+    case 'getTripsForUser':
+        $trips = getTripsForUser($post_data['username']);
+        send_json_response(['data' => $trips]);
+        break;
+    case 'getListsForUser':
+        $lists = getListsForUser($post_data['username']);
+        send_json_response(['data' => $lists]);
+        break;
     case 'createLocation':
         createLocation($post_data['location_name'], $post_data['country'], $post_data['longitude'], $post_data['latitude']);
+        send_success();
+        break;
+    case 'createUser':
+        createUser($post_data['username'], $post_data['email'], $post_data['password'], $post_data['first_name'], $post_data['last_name']);
+        send_success();
+        break;
+    case 'loginUser':
+        loginUser($post_data['username'], $post_data['password']);
+        send_success();
+        break;
+    case 'signout':
+        unset($_SESSION['username']);
         send_success();
         break;
     case 'exportUserReviews':
         $username = $_SESSION['username'] ?? null;
         if (!$username) {
-            send_error("Not logged in");
+            send_error("Not logged in", true);
             exit();
         }
     
@@ -58,15 +72,19 @@ switch ($segments[1]) {
         fclose($output);
         break;
     default:
-        send_error('Unknown endpoint');
+        send_error('Unknown endpoint', false);
 }
 
 function send_success() {
     send_json_response(['data' => 'Success']);
 }
 
-function send_error($message) {
-    send_json_response(['error' => $message]);
+function send_error($message, $is_user_error = false) {
+    if($is_user_error) {
+        send_json_response(['error' => $message]);
+    } else {
+        send_json_response(['error' => "Internal Server Error"]);
+    }
 }
 
 function send_json_response($data) {
@@ -96,38 +114,39 @@ function get_db_connection() {
 
 function initialize_db() {
     global $db;
+    # The VARCHAR(255) fields are required to be VARCHAR instead of text because theyre Primary Keys or reference a PK
     $stmt = "CREATE TABLE IF NOT EXISTS users (
-                username VARCHAR(50) PRIMARY KEY,
-                email VARCHAR(100) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                first_name VARCHAR(50),
-                last_name VARCHAR(50)
+                username VARCHAR(255) PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                first_name TEXT,
+                last_name TEXT
             );
             CREATE TABLE IF NOT EXISTS following (
-                follower_username VARCHAR(50),
-                followee_username VARCHAR(50),
+                follower_username VARCHAR(255),
+                followee_username VARCHAR(255),
                 PRIMARY KEY (follower_username, followee_username),
                 FOREIGN KEY (follower_username) REFERENCES users(username) ON DELETE CASCADE,
                 FOREIGN KEY (followee_username) REFERENCES users(username) ON DELETE CASCADE
             );
             CREATE TABLE IF NOT EXISTS locations (
                 location_id INT AUTO_INCREMENT PRIMARY KEY,
-                location_name VARCHAR(100) NOT NULL,
-                country VARCHAR(100) NOT NULL,
+                location_name TEXT NOT NULL,
+                country TEXT NOT NULL,
                 longitude DECIMAL(9,6),
                 latitude DECIMAL(9,6)
             );
             CREATE TABLE IF NOT EXISTS trips (
                 trip_id INT AUTO_INCREMENT PRIMARY KEY,
-                trip_title VARCHAR(100) NOT NULL,
+                trip_title TEXT NOT NULL,
                 start_date DATE,
                 end_date DATE,
-                username VARCHAR(50),
+                username VARCHAR(255),
                 FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
             );
             CREATE TABLE IF NOT EXISTS transportation (
                 transit_id INT AUTO_INCREMENT PRIMARY KEY,
-                transit_type VARCHAR(50),
+                transit_type TEXT,
                 transit_length INT
             );
             CREATE TABLE IF NOT EXISTS trip_locations (
@@ -151,15 +170,15 @@ function initialize_db() {
                 comment_id INT AUTO_INCREMENT PRIMARY KEY,
                 comment_text TEXT NOT NULL,
                 date_written DATE,
-                commenter_username VARCHAR(50),
+                commenter_username VARCHAR(255),
                 review_id INT,
                 FOREIGN KEY (commenter_username) REFERENCES users(username) ON DELETE CASCADE,
                 FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE
             );
             CREATE TABLE IF NOT EXISTS list (
                 list_id INT AUTO_INCREMENT PRIMARY KEY,
-                list_title VARCHAR(100) NOT NULL,
-                username VARCHAR(50),
+                list_title TEXT NOT NULL,
+                username VARCHAR(255),
                 FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
             );
             CREATE TABLE IF NOT EXISTS list_item (
@@ -189,18 +208,9 @@ function destroy_db() {
     $db->exec($stmt);
 }
 
-# TODO: why do we need this? All the functions from milestone 2 reference this but I dont know why
-function db_null_or_string($value) {
-    if ($value === null || trim($value) === '') {
-        return null;
-    }
-    return $value;
-}
-
-
-function createUser($username, $email, $password_hash, $first_name, $last_name) {
-    if($_SESSION['username']){
-        send_error('Already logged in');
+function createUser($username, $email, $password, $first_name, $last_name) {
+    if(isset($_SESSION['username'])){
+        send_error('Already logged in', true);
         exit();
     }
     global $db;
@@ -210,23 +220,36 @@ function createUser($username, $email, $password_hash, $first_name, $last_name) 
     );
     $stmt->bindValue(':username', $username);
     $stmt->bindValue(':email', $email);
-    $stmt->bindValue(':password_hash', $password_hash);
+    $stmt->bindValue(':password_hash', value: password_hash($password, PASSWORD_DEFAULT));
     $stmt->bindValue(':first_name', $first_name);
     $stmt->bindValue(':last_name', $last_name);
     $stmt->execute();
     $stmt->closeCursor();
 }
 
+function loginUser($username, $password) {
+    if(isset($_SESSION['username'])){
+        send_error('Already logged in', true);
+        exit();
+    }
+    $user = getUserByLogin($username);
+    if (!$user || !password_verify($password, $user['password'])) {
+        send_error('Invalid username/email or password', true);
+        exit();
+    }
+    $_SESSION['username'] = $username;
+}
 
-function getUserByLogin($login) {
+
+function getUserByLogin($username) {
     global $db;
     $stmt = $db->prepare(
         "SELECT username, email, password, first_name, last_name
          FROM users
-         WHERE (username = :login OR email = :login)
+         WHERE username = :username
          LIMIT 1"
     );
-    $stmt->bindValue(':login', $login);
+    $stmt->bindValue(':username', $username);
     $stmt->execute();
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     $stmt->closeCursor();
@@ -320,8 +343,8 @@ function getFollowing($username) {
 
 
 function createLocation($location_name, $country, $longitude, $latitude) {
-    if(!$_SESSION['username']){
-        send_error('Must be logged in to create a location');
+    if(!isset($_SESSION['username'])){
+        send_error('Must be logged in to create a location', true);
         exit();
     }
     global $db;
@@ -340,7 +363,6 @@ function createLocation($location_name, $country, $longitude, $latitude) {
 
 function searchLocations($q, $limit, $offset) {
     global $db;
-    $q = db_null_or_string($q);
 
     $stmt = $db->prepare(
     # TODO: this used to be "SELECT location_id, location_name, country, longitude, latitude. BUt i removed id bc i want it to work rn so i can stop
@@ -368,8 +390,6 @@ function searchLocations($q, $limit, $offset) {
     $stmt->closeCursor();
     return $result;
 }
-
-
 
 
 function createTrip($trip_title, $start_date, $end_date, $username) {
@@ -403,7 +423,7 @@ function addTripStop($trip_id, $location_id, $transit_id) {
 }
 
 
-function getTripsForUser($username, $limit, $offset) {
+function getTripsForUser($username) {
     global $db;
     $stmt = $db->prepare(
         "SELECT t.trip_id,
@@ -418,12 +438,9 @@ function getTripsForUser($username, $limit, $offset) {
          LEFT JOIN locations l ON l.location_id = tl.location_id
          WHERE t.username = :username
          GROUP BY t.trip_id, t.trip_title, t.start_date, t.end_date
-         ORDER BY t.start_date DESC, t.trip_id DESC
-         LIMIT :limit OFFSET :offset"
+         ORDER BY t.start_date DESC, t.trip_id DESC"
     );
     $stmt->bindValue(':username', $username);
-    $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
-    $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
     $stmt->execute();
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $stmt->closeCursor();
@@ -758,7 +775,6 @@ function getHomeFeed($viewer_username, $limit, $offset) {
 
 function searchReviews($q, $limit, $offset) {
     global $db;
-    $q = db_null_or_string($q);
 
     $stmt = $db->prepare(
         "SELECT r.review_id,
