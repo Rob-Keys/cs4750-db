@@ -42,6 +42,14 @@ switch ($segments[1]) {
         createUser($post_data['username'], $post_data['email'], $post_data['password'], $post_data['first_name'], $post_data['last_name']);
         send_success();
         break;
+    case 'createTrip':
+        $trip_id = createTrip($post_data['trip_title'], $post_data['start_date'], $post_data['end_date'], $post_data['username']);
+        send_json_response(['data' => ['trip_id' => $trip_id]]);
+        break;
+    case 'createReview':
+        $review_id = createReview($post_data['rating'], $post_data['review_text'], $post_data['trip_id']);
+        send_json_response(['data' => ['review_id' => $review_id]]);
+        break;
     case 'loginUser':
         loginUser($post_data['username'], $post_data['password']);
         send_success();
@@ -525,7 +533,8 @@ function deleteTrip($trip_id, $owner_username) {
 
 
 
-function createReview($rating, $written_review, $date_written, $trip_id) {
+function createReview($rating, $written_review, $trip_id) {
+    $date_written = date('Y-m-d H:i:s');
     global $db;
     $stmt = $db->prepare(
         "INSERT INTO reviews (rating, written_review, date_written, trip_id)
@@ -776,46 +785,51 @@ function getHomeFeed($viewer_username, $limit, $offset) {
 function searchReviews($q, $limit, $offset) {
     global $db;
 
-    $stmt = $db->prepare(
-        "SELECT r.review_id,
-                r.rating,
-                r.date_written,
-                t.trip_id,
-                t.trip_title,
-                t.username AS author,
-                GROUP_CONCAT(DISTINCT l.location_name
-                             ORDER BY tl.trip_location_id
-                             SEPARATOR ' -> ') AS itinerary
-         FROM reviews r
-         JOIN trips t ON t.trip_id = r.trip_id
-         LEFT JOIN trip_locations tl ON tl.trip_id = t.trip_id
-         LEFT JOIN locations l ON l.location_id = tl.location_id
-         WHERE (:q1 IS NULL
-           OR r.written_review LIKE CONCAT('%', :q2, '%')
-           OR t.trip_title     LIKE CONCAT('%', :q3, '%')
-           OR l.location_name  LIKE CONCAT('%', :q4, '%'))
-         GROUP BY r.review_id, r.rating, r.date_written,
-                  t.trip_id, t.trip_title, t.username
-         ORDER BY r.date_written DESC
-         LIMIT :limit OFFSET :offset"
-    );
-    if ($q === null) {
-        $stmt->bindValue(':q1', null, PDO::PARAM_NULL);
-        $stmt->bindValue(':q2', null, PDO::PARAM_NULL);
-        $stmt->bindValue(':q3', null, PDO::PARAM_NULL);
-        $stmt->bindValue(':q4', null, PDO::PARAM_NULL);
-    } else {
-        $stmt->bindValue(':q1', $q, PDO::PARAM_STR);
-        $stmt->bindValue(':q2', $q, PDO::PARAM_STR);
-        $stmt->bindValue(':q3', $q, PDO::PARAM_STR);
-        $stmt->bindValue(':q4', $q, PDO::PARAM_STR);
+    try {
+        $stmt = $db->prepare(
+            "SELECT r.review_id,
+                    r.rating,
+                    r.date_written,
+                    t.trip_id,
+                    t.trip_title,
+                    t.username AS author,
+                    GROUP_CONCAT(DISTINCT l.location_name
+                                 ORDER BY tl.trip_location_id
+                                 SEPARATOR ' -> ') AS itinerary
+             FROM reviews r
+             JOIN trips t ON t.trip_id = r.trip_id
+             LEFT JOIN trip_locations tl ON tl.trip_id = t.trip_id
+             LEFT JOIN locations l ON l.location_id = tl.location_id
+             WHERE (:q1 IS NULL
+               OR r.written_review LIKE CONCAT('%', :q2, '%')
+               OR t.trip_title     LIKE CONCAT('%', :q3, '%')
+               OR l.location_name  LIKE CONCAT('%', :q4, '%'))
+             GROUP BY r.review_id, r.rating, r.date_written,
+                      t.trip_id, t.trip_title, t.username
+             ORDER BY r.date_written DESC
+             LIMIT :limit OFFSET :offset"
+        );
+        if ($q === null || $q === '') {
+            $stmt->bindValue(':q1', null, PDO::PARAM_NULL);
+            $stmt->bindValue(':q2', null, PDO::PARAM_NULL);
+            $stmt->bindValue(':q3', null, PDO::PARAM_NULL);
+            $stmt->bindValue(':q4', null, PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(':q1', $q, PDO::PARAM_STR);
+            $stmt->bindValue(':q2', $q, PDO::PARAM_STR);
+            $stmt->bindValue(':q3', $q, PDO::PARAM_STR);
+            $stmt->bindValue(':q4', $q, PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->closeCursor();
+        return $results;
+    } catch (PDOException $e) {
+        send_error($e->getMessage(), false);
+        exit();
     }
-    $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
-    $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
-    $stmt->execute();
-    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $stmt->closeCursor();
-    return $results;
 }
 
 

@@ -7,12 +7,12 @@ function loadTripsForSelector() {
     const tripSelect = document.getElementById('trip-select');
 
     // Fetch trips to populate selector
-    fetch('/api/searchTrips', {
+    fetch('/api/getTripsForUser', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ q: "", limit: 100, offset: 0 })
+        body: JSON.stringify({ username: sessionStorage.getItem('username') })
     })
     .then(response => response.json())
     .then(data => {

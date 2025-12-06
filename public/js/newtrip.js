@@ -12,13 +12,14 @@ function handleTripForm() {
         const trip_title = document.getElementById('trip_title').value;
         const start_date = document.getElementById('start_date').value;
         const end_date = document.getElementById('end_date').value;
+        const username = sessionStorage.getItem('username');
 
         fetch('/api/createTrip', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ trip_title, start_date, end_date })
+            body: JSON.stringify({ trip_title, start_date, end_date, username })
         })
         .then(response => response.json())
         .then(data => {
