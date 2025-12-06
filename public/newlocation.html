@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ravel - New Location</title>
+    <script src="js/newlocation.js" defer></script>
+    <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="app-header">
+            <div class="app-title">Ravel<span>.</span></div>
+            <nav class="nav">
+                <a href="home.html">Home</a>
+                <a href="reviews.html">Reviews</a>
+                <a href="locations.html">Locations</a>
+                <a href="trip.html">Trips</a>
+                <a href="list.html">Lists</a>
+            </nav>
+        </header>
+
+        <main class="page">
+            <h1>Add a New Location</h1>
+
+            <section style="max-width: 520px; margin-top: 1.5rem;">
+                <form id="new-location-form">
+                    <div class="form-row">
+                        <label for="location_name">Location name</label>
+                        <input type="text" id="location_name" name="location_name" required>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="country">Country</label>
+                        <input type="text" id="country" name="country" required>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="longitude">Longitude</label>
+                        <input type="number" step="0.000001" id="longitude" name="longitude">
+                    </div>
+
+                    <div class="form-row">
+                        <label for="latitude">Latitude</label>
+                        <input type="number" step="0.000001" id="latitude" name="latitude">
+                    </div>
+
+                    <hr style="margin: 1.5rem 0;">
+
+                    <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Attach to a Trip</h2>
+
+                    <div class="form-row">
+                        <label for="trip_id">Trip</label>
+                        <select id="trip_id" name="trip_id">
+                            <option value="">No trip selected</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="transit_type">Transit type</label>
+                        <select id="transit_type" name="transit_type">
+                            <option value="">-- Not specified --</option>
+                            <option value="plane">Plane</option>
+                            <option value="train">Train</option>
+                            <option value="bus">Bus</option>
+                            <option value="car">Car</option>
+                            <option value="boat">Boat</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="transit_length">Transit length</label>
+                        <input type="number" step="0.1" id="transit_length" name="transit_length">
+                    </div>
+
+                    <div class="form-row" style="margin-top: 1.25rem;">
+                        <button type="submit" class="button">Save Location</button>
+                        <a href="locations.html" class="button button-secondary">Cancel</a>
+                    </div>
+                </form>
+
+                <p id="new-location-message" class="msg" style="margin-top: 0.75rem; display:none;"></p>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
