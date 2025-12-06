@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ravel - New Trip</title>
+    <script src="js/newtrip.js" defer></script>
+    <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="app-header">
+            <div class="app-title">Ravel<span>.</span></div>
+            <nav class="nav">
+                <a href="home.html">Home</a>
+                <a href="reviews.html">Reviews</a>
+                <a href="locations.html">Locations</a>
+                <a href="trip.html">Trips</a>
+                <a href="list.html">Lists</a>
+            </nav>
+        </header>
+
+        <main class="page">
+            <h1>Create a New Trip</h1>
+            <p class="page-subtitle">
+                Add a new trip by giving it a title and your start and end dates.
+            </p>
+
+            <section style="max-width: 480px; margin-top: 1.5rem;">
+                <form id="new-trip-form">
+                    <div class="form-row">
+                        <label for="trip_title">Trip title</label>
+                        <input
+                            type="text"
+                            id="trip_title"
+                            name="trip_title"
+                            placeholder="e.g., Summer in Europe"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-row">
+                        <label for="start_date">Start date</label>
+                        <input
+                            type="date"
+                            id="start_date"
+                            name="start_date"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-row">
+                        <label for="end_date">End date</label>
+                        <input
+                            type="date"
+                            id="end_date"
+                            name="end_date"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-row" style="margin-top: 1.25rem;">
+                        <button type="submit" class="button">Save Trip</button>
+                        <a href="trip.html" class="button button-secondary">Cancel</a>
+                    </div>
+                </form>
+
+                <p id="new-trip-message" class="msg" style="margin-top: 0.75rem; display:none;"></p>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
