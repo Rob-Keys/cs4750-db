@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ravel - New List</title>
+    <script src="js/newlist.js" defer></script>
+    <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="app-header">
+            <div class="app-title">Ravel<span>.</span></div>
+            <nav class="nav">
+                <a href="home.html">Home</a>
+                <a href="reviews.html">Reviews</a>
+                <a href="locations.html">Locations</a>
+                <a href="trip.html">Trips</a>
+                <a href="list.html">Lists</a>
+            </nav>
+        </header>
+
+        <main class="page">
+            <h1>Create a New List</h1>
+
+            <section style="max-width: 520px; margin-top: 1.5rem;">
+                <form id="new-list-form">
+                    <div class="form-row">
+                        <label for="list_title">List Title</label>
+                        <input type="text" id="list_title" name="list_title" required>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="trip_selector">Add Trips to This List</label>
+                        <select id="trip_selector" name="trip_selector" multiple size="6" style="width:100%;">
+                        </select>
+                    </div>
+
+                    <div class="form-row" style="margin-top: 1.25rem;">
+                        <button type="submit" class="button">Create List</button>
+                        <a href="list.html" class="button button-secondary">Cancel</a>
+                    </div>
+                </form>
+
+                <p id="new-list-message" class="msg" style="margin-top: 0.75rem; display:none;"></p>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
