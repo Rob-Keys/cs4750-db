@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     fetchLocations();
+    addCreateLocationButton();
 });
 
 function fetchLocations() {
