@@ -12,11 +12,15 @@ $segments = explode('/', trim($path, '/'));
 $post_data = json_decode(file_get_contents('php://input'), true);
 
 switch ($segments[1]) {
+    case 'initialize_db':
+        initialize_db();
+        exit();
+        break;
+    case 'destroy_db':
+        destroy_db();
+        exit();
+        break;
     case 'createUser':
-        if ($_SESSION['username']){
-            send_error('Already logged in');
-            exit();
-        }
         createUser($post_data['username'], $post_data['email'], $post_data['password_hash'], $post_data['first_name'], $post_data['last_name']);
         send_success();
         break;
@@ -24,12 +28,14 @@ switch ($segments[1]) {
         $locations = searchLocations($post_data['q'], $post_data['limit'], $post_data['offset']);
         send_json_response(['data' => $locations]);
         break;
+    case 'searchReviews':
+        $reviews = searchReviews($post_data['q'], $post_data['limit'], $post_data['offset']);
+        send_json_response(['data' => $reviews]);
+        break;
     case 'createLocation':
         createLocation($post_data['location_name'], $post_data['country'], $post_data['longitude'], $post_data['latitude']);
         send_success();
         break;
-    // Add more cases here for different endpoints
-    
     case 'exportUserReviews':
         $username = $_SESSION['username'] ?? null;
         if (!$username) {
@@ -63,6 +69,11 @@ function send_error($message) {
     send_json_response(['error' => $message]);
 }
 
+function send_json_response($data) {
+    header('Content-Type: application/json');
+    echo json_encode($data);
+}
+
 function get_db_connection() {
     $host = 'localhost';
     $db   = 'project';
@@ -83,9 +94,99 @@ function get_db_connection() {
     }
 }
 
-function send_json_response($data) {
-    header('Content-Type: application/json');
-    echo json_encode($data);
+function initialize_db() {
+    global $db;
+    $stmt = "CREATE TABLE IF NOT EXISTS users (
+                username VARCHAR(50) PRIMARY KEY,
+                email VARCHAR(100) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                first_name VARCHAR(50),
+                last_name VARCHAR(50)
+            );
+            CREATE TABLE IF NOT EXISTS following (
+                follower_username VARCHAR(50),
+                followee_username VARCHAR(50),
+                PRIMARY KEY (follower_username, followee_username),
+                FOREIGN KEY (follower_username) REFERENCES users(username) ON DELETE CASCADE,
+                FOREIGN KEY (followee_username) REFERENCES users(username) ON DELETE CASCADE
+            );
+            CREATE TABLE IF NOT EXISTS locations (
+                location_id INT AUTO_INCREMENT PRIMARY KEY,
+                location_name VARCHAR(100) NOT NULL,
+                country VARCHAR(100) NOT NULL,
+                longitude DECIMAL(9,6),
+                latitude DECIMAL(9,6)
+            );
+            CREATE TABLE IF NOT EXISTS trips (
+                trip_id INT AUTO_INCREMENT PRIMARY KEY,
+                trip_title VARCHAR(100) NOT NULL,
+                start_date DATE,
+                end_date DATE,
+                username VARCHAR(50),
+                FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
+            );
+            CREATE TABLE IF NOT EXISTS transportation (
+                transit_id INT AUTO_INCREMENT PRIMARY KEY,
+                transit_type VARCHAR(50),
+                transit_length INT
+            );
+            CREATE TABLE IF NOT EXISTS trip_locations (
+                trip_location_id INT AUTO_INCREMENT PRIMARY KEY,
+                trip_id INT,
+                location_id INT,
+                transit_id INT,
+                FOREIGN KEY (trip_id) REFERENCES trips(trip_id) ON DELETE CASCADE,
+                FOREIGN KEY (location_id) REFERENCES locations(location_id) ON DELETE CASCADE,
+                FOREIGN KEY (transit_id) REFERENCES transportation(transit_id) ON DELETE SET NULL
+            );
+            CREATE TABLE IF NOT EXISTS reviews (
+                review_id INT AUTO_INCREMENT PRIMARY KEY,
+                rating INT NOT NULL,
+                written_review TEXT,
+                date_written DATE,
+                trip_id INT,
+                FOREIGN KEY (trip_id) REFERENCES trips(trip_id) ON DELETE CASCADE
+            );
+            CREATE TABLE IF NOT EXISTS comments (
+                comment_id INT AUTO_INCREMENT PRIMARY KEY,
+                comment_text TEXT NOT NULL,
+                date_written DATE,
+                commenter_username VARCHAR(50),
+                review_id INT,
+                FOREIGN KEY (commenter_username) REFERENCES users(username) ON DELETE CASCADE,
+                FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE
+            );
+            CREATE TABLE IF NOT EXISTS list (
+                list_id INT AUTO_INCREMENT PRIMARY KEY,
+                list_title VARCHAR(100) NOT NULL,
+                username VARCHAR(50),
+                FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
+            );
+            CREATE TABLE IF NOT EXISTS list_item (
+                list_item_id INT AUTO_INCREMENT PRIMARY KEY,
+                list_index INT,
+                list_id INT,
+                trip_id INT,
+                FOREIGN KEY (list_id) REFERENCES list(list_id) ON DELETE CASCADE,
+                FOREIGN KEY (trip_id) REFERENCES trips(trip_id) ON DELETE CASCADE
+            );";
+    $db->exec($stmt);
+}
+
+function destroy_db() {
+    # TODO: Add check if youre logged in as an admin user
+    global $db;
+    $stmt = "DROP TABLE IF EXISTS list_item;
+            DROP TABLE IF EXISTS list;
+            DROP TABLE IF EXISTS comments;
+            DROP TABLE IF EXISTS reviews;
+            DROP TABLE IF EXISTS trip_locations;
+            DROP TABLE IF EXISTS transportation;
+            DROP TABLE IF EXISTS trips;
+            DROP TABLE IF EXISTS locations;
+            DROP TABLE IF EXISTS following;
+            DROP TABLE IF EXISTS users;";
+    $db->exec($stmt);
 }
 
 # TODO: why do we need this? All the functions from milestone 2 reference this but I dont know why
@@ -98,6 +199,10 @@ function db_null_or_string($value) {
 
 
 function createUser($username, $email, $password_hash, $first_name, $last_name) {
+    if($_SESSION['username']){
+        send_error('Already logged in');
+        exit();
+    }
     global $db;
     $stmt = $db->prepare(
         "INSERT INTO users (username, email, password, first_name, last_name)
@@ -215,6 +320,10 @@ function getFollowing($username) {
 
 
 function createLocation($location_name, $country, $longitude, $latitude) {
+    if(!$_SESSION['username']){
+        send_error('Must be logged in to create a location');
+        exit();
+    }
     global $db;
     $stmt = $db->prepare(
         "INSERT INTO locations (location_name, country, longitude, latitude)
@@ -665,19 +774,25 @@ function searchReviews($q, $limit, $offset) {
          JOIN trips t ON t.trip_id = r.trip_id
          LEFT JOIN trip_locations tl ON tl.trip_id = t.trip_id
          LEFT JOIN locations l ON l.location_id = tl.location_id
-         WHERE (:q IS NULL
-           OR r.written_review LIKE CONCAT('%', :q, '%')
-           OR t.trip_title     LIKE CONCAT('%', :q, '%')
-           OR l.location_name  LIKE CONCAT('%', :q, '%'))
+         WHERE (:q1 IS NULL
+           OR r.written_review LIKE CONCAT('%', :q2, '%')
+           OR t.trip_title     LIKE CONCAT('%', :q3, '%')
+           OR l.location_name  LIKE CONCAT('%', :q4, '%'))
          GROUP BY r.review_id, r.rating, r.date_written,
                   t.trip_id, t.trip_title, t.username
          ORDER BY r.date_written DESC
          LIMIT :limit OFFSET :offset"
     );
     if ($q === null) {
-        $stmt->bindValue(':q', null, PDO::PARAM_NULL);
+        $stmt->bindValue(':q1', null, PDO::PARAM_NULL);
+        $stmt->bindValue(':q2', null, PDO::PARAM_NULL);
+        $stmt->bindValue(':q3', null, PDO::PARAM_NULL);
+        $stmt->bindValue(':q4', null, PDO::PARAM_NULL);
     } else {
-        $stmt->bindValue(':q', $q, PDO::PARAM_STR);
+        $stmt->bindValue(':q1', $q, PDO::PARAM_STR);
+        $stmt->bindValue(':q2', $q, PDO::PARAM_STR);
+        $stmt->bindValue(':q3', $q, PDO::PARAM_STR);
+        $stmt->bindValue(':q4', $q, PDO::PARAM_STR);
     }
     $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
     $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);

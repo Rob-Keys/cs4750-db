@@ -70,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderReviews(data.data);
         })
         .catch(err => {
-            console.error('Error fetching reviews:', err);
             alert('Unexpected error fetching reviews.');
         });
     }
