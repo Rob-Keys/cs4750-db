@@ -24,3 +24,11 @@ function fetchLocations() {
         });
     });
 }
+
+function addCreateLocationButton() {
+    const addLocationButtonParent = document.getElementById('add-location-button');
+    const username = sessionStorage.getItem('username');
+    if (username) {
+        addLocationButtonParent.innerHTML = '<a href="newlocation.html" id="add-location" class="button">Add Location</a>';
+    }
+}

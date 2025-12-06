@@ -34,6 +34,10 @@ switch ($segments[1]) {
         $lists = getListsForUser($post_data['username']);
         send_json_response(['data' => $lists]);
         break;
+    case 'getReviewsForUser':
+        $reviews = getReviewsForUser($post_data['username']);
+        send_json_response(['data' => $reviews]);
+        break;
     case 'createLocation':
         createLocation($post_data['location_name'], $post_data['country'], $post_data['longitude'], $post_data['latitude']);
         send_success();
@@ -742,7 +746,33 @@ function getListsForUser($username) {
     return $rows; 
 }
 
-
+function getReviewsForUser($username) {
+    global $db;
+    $stmt = $db->prepare(
+        "SELECT r.review_id,
+                r.rating,
+                r.written_review,
+                r.date_written,
+                t.trip_id,
+                t.trip_title,
+                GROUP_CONCAT(DISTINCT l.location_name
+                             ORDER BY tl.trip_location_id
+                             SEPARATOR ' -> ') AS itinerary
+         FROM reviews r
+         JOIN trips t ON t.trip_id = r.trip_id
+         LEFT JOIN trip_locations tl ON tl.trip_id = t.trip_id
+         LEFT JOIN locations l ON l.location_id = tl.location_id
+         WHERE t.username = :username
+         GROUP BY r.review_id, r.rating, r.written_review,
+                  r.date_written, t.trip_id, t.trip_title
+         ORDER BY r.date_written DESC"
+    );
+    $stmt->bindValue(':username', $username);
+    $stmt->execute();
+    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->closeCursor();
+    return $results;
+}
 
 function getHomeFeed($viewer_username, $limit, $offset) {
     global $db;

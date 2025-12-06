@@ -1,32 +1,53 @@
-document.addEventListener('DOMContentLoaded', () => {
-    insertNavBar();
-});
+export function getUserLists() {
+    return fetch('/api/getListsForUser', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username: sessionStorage.getItem('username') })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error fetching lists: ' + data.error);
+            return;
+        }
+        return data.data;
+    });
+}
 
-function insertNavBar(){
-    const nav = document.querySelector('.app-header');
-    const isSignedIn = sessionStorage.getItem('username') ?? false;
+export function getUserTrips() {
+    return fetch('/api/getTripsForUser', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username: sessionStorage.getItem('username') })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error fetching trips: ' + data.error);
+            return;
+        }
+        return data.data;
+    });
+}
 
-    if(isSignedIn){
-        nav.innerHTML = `
-        <a class="app-title" href="home.html">Ravel<span>.</span></a>
-        <nav class="nav">
-            <a href="home.html">Home</a>
-            <a href="reviews.html">Reviews</a>
-            <a href="locations.html">Locations</a>
-            <a href="trip.html">Trips</a>
-            <a href="list.html">Lists</a>
-            <a href="userprofile.html">Profile</a>
-        </nav>
-        `;
-    } else {
-        nav.innerHTML = `
-        <a class="app-title" href="home.html">Ravel<span>.</span></a>
-        <nav class="nav">
-            <a href="home.html">Home</a>
-            <a href="reviews.html">Reviews</a>
-            <a href="locations.html">Locations</a>
-            <a href="login.html">Sign In</a>
-        </nav>
-        `;
-    }
+export function getUserReviews() {
+    return fetch('/api/getReviewsForUser', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username: sessionStorage.getItem('username') })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error fetching reviews: ' + data.error);
+            return;
+        }
+        return data.data;
+    });
 }
