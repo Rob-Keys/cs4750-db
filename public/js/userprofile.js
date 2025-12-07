@@ -53,7 +53,7 @@ function loadUserProfile() {
     getUserLists().then(lists => {
         lists.forEach(list => {
             let li = document.createElement('li');
-            li.textContent = list.list_name;
+            li.textContent = list.list_title;
             user_lists.appendChild(li);
         });
     });
