@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ravel - New Trip</title>
+    <title>Ravel – New Trip</title>
     <script src="js/header.js" defer></script>
     <script src="js/newtrip.js" defer></script>
     <link rel="stylesheet" href="css/custom.css">
 </head>
 <body>
     <div class="app-shell">
-        <header class="app-header">
-        </header>
+
+        <header class="app-header"></header>
 
         <main class="page">
             <h1>Create a New Trip</h1>
@@ -19,48 +19,57 @@
                 Add a new trip by giving it a title and your start and end dates.
             </p>
 
-            <section style="max-width: 480px; margin-top: 1.5rem;">
+            <section class="card" style="max-width: 520px; margin-top: 1.5rem; padding: 1.25rem;">
                 <form id="new-trip-form">
-                    <div class="form-row">
-                        <label for="trip_title">Trip title</label>
+
+                    <div class="form-row" style="flex-direction: column; gap: 0.35rem;">
+                        <label for="trip_title" class="text-muted">Trip title</label>
                         <input
                             type="text"
                             id="trip_title"
                             name="trip_title"
+                            class="input"
                             placeholder="Spring Break"
                             required
                         >
                     </div>
 
-                    <div class="form-row">
-                        <label for="start_date">Start date</label>
+                    <div class="form-row" style="flex-direction: column; gap: 0.35rem; margin-top: 0.75rem;">
+                        <label for="start_date" class="text-muted">Start date</label>
                         <input
                             type="date"
                             id="start_date"
                             name="start_date"
+                            class="input"
                             required
                         >
                     </div>
 
-                    <div class="form-row">
-                        <label for="end_date">End date</label>
+                    <div class="form-row" style="flex-direction: column; gap: 0.35rem; margin-top: 0.75rem;">
+                        <label for="end_date" class="text-muted">End date</label>
                         <input
                             type="date"
                             id="end_date"
                             name="end_date"
+                            class="input"
                             required
                         >
                     </div>
 
-                    <div class="form-row" style="margin-top: 1.25rem;">
-                        <button type="submit" class="button">Save Trip</button>
-                        <a href="trip.html" class="button button-secondary">Cancel</a>
+                    <div class="form-row" style="margin-top: 1.25rem; gap: 0.75rem;">
+                        <button type="submit" class="button">
+                            Save Trip
+                        </button>
+                        <a href="trip.html" class="button button-secondary" style="text-decoration: none; display: inline-flex; align-items: center;">
+                            Cancel
+                        </a>
                     </div>
                 </form>
 
-                <p id="new-trip-message" class="msg" style="margin-top: 0.75rem; display:none;"></p>
+                <p id="new-trip-message" class="msg text-muted" style="margin-top: 0.75rem; display:none;"></p>
             </section>
         </main>
     </div>
 </body>
 </html>
+
