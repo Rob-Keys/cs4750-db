@@ -83,6 +83,33 @@ switch ($segments[1]) {
     
         fclose($output);
         break;
+    case 'createList':
+        $username = $_SESSION['username'] ?? null;
+        if (!$username) {
+            send_error('Not logged in', true);
+            exit();
+        }
+
+        $list_title = $post_data['list_title'] ?? '';
+        $trip_ids   = $post_data['trip_ids'] ?? [];
+
+        if (trim($list_title) === '') {
+            send_error('List title is required', true);
+            exit();
+        }
+
+        $list_id = createList($list_title, $username);
+
+        $index = 0;
+        foreach ($trip_ids as $trip_id) {
+            if ($trip_id !== '' && $trip_id !== null) {
+                addTripToList($index++, $list_id, (int)$trip_id);
+            }
+        }
+
+        send_json_response(['data' => ['list_id' => $list_id]]);
+        break;
+
     default:
         send_error('Unknown endpoint', false);
 }
