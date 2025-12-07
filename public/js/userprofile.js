@@ -2,6 +2,7 @@ import { getUserLists, getUserTrips, getUserReviews } from './shared.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     createSignOutButton();
+    createExportButton();
     loadUserProfile();
 });
 
@@ -35,7 +36,14 @@ function createSignOutButton() {
         });
     }
 }
+function createExportButton() {
+    const exportBtn = document.getElementById('export-reviews');
+    if (!exportBtn) return;
 
+    exportBtn.addEventListener('click', () => {
+        window.location.href = '/api/exportUserReviews';
+    });
+}
 function loadUserProfile() {
     let username_field = document.getElementById('user-name');
     let user_trips = document.getElementById('user-trips');
