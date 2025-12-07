@@ -8,57 +8,95 @@
     <script src="js/newlocation.js" defer></script>
     <link rel="stylesheet" href="css/custom.css">
 </head>
+
 <body>
     <div class="app-shell">
-        <header class="app-header">
-        </header>
+        <header class="app-header"></header>
 
         <main class="page">
             <h1>Add a New Location</h1>
+            <p class="page-subtitle">
+                Add a location to your collection, and optionally attach it to a trip.
+            </p>
 
-            <section style="max-width: 520px; margin-top: 1.5rem;">
+            <section class="card" style="max-width: 520px; margin-top: 1.5rem; padding: 1.25rem;">
                 <form id="new-location-form">
-                    <div class="form-row">
-                        <label for="location_name">Location name</label>
-                        <input type="text" id="location_name" name="location_name" required>
+
+                    <div class="form-row" style="flex-direction: column; gap: 0.35rem;">
+                        <label for="location_name" class="text-muted">Location name</label>
+                        <input
+                            type="text"
+                            id="location_name"
+                            name="location_name"
+                            class="input"
+                            placeholder="Paris"
+                            required
+                        >
                     </div>
 
-                    <div class="form-row">
-                        <label for="country">Country</label>
-                        <input type="text" id="country" name="country" required>
+                    <div class="form-row" style="flex-direction: column; gap: 0.35rem; margin-top: 0.75rem;">
+                        <label for="country" class="text-muted">Country</label>
+                        <input
+                            type="text"
+                            id="country"
+                            name="country"
+                            class="input"
+                            placeholder="France"
+                            required
+                        >
                     </div>
 
-                    <div class="form-row">
-                        <label for="longitude">Longitude</label>
-                        <input type="number" step="0.000001" id="longitude" name="longitude">
+                    <div class="form-row" style="flex-direction: column; gap: 0.35rem; margin-top: 0.75rem;">
+                        <label for="longitude" class="text-muted">Longitude</label>
+                        <input
+                            type="number"
+                            step="0.000001"
+                            id="longitude"
+                            name="longitude"
+                            class="input"
+                            placeholder="2.3522"
+                        >
                     </div>
 
-                    <div class="form-row">
-                        <label for="latitude">Latitude</label>
-                        <input type="number" step="0.000001" id="latitude" name="latitude">
+                    <div class="form-row" style="flex-direction: column; gap: 0.35rem; margin-top: 0.75rem;">
+                        <label for="latitude" class="text-muted">Latitude</label>
+                        <input
+                            type="number"
+                            step="0.000001"
+                            id="latitude"
+                            name="latitude"
+                            class="input"
+                            placeholder="48.8566"
+                        >
                     </div>
 
                     <hr style="margin: 1.5rem 0;">
 
-                    <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Attach to a Trip</h2>
+                    <h2 class="text-muted" style="font-size: 1.1rem; margin-bottom: 0.5rem;">Attach to a Trip</h2>
 
-                    <div class="form-row">
-                        <label for="trip_id">Trip</label>
-                        <select id="trip_id" name="trip_id">
+                    <div class="form-row" style="flex-direction: column; gap: 0.35rem;">
+                        <label for="trip_id" class="text-muted">Trip</label>
+                        <select id="trip_id" name="trip_id" class="input">
                             <option value="">No trip selected</option>
                         </select>
                     </div>
 
-
-                    <div class="form-row" style="margin-top: 1.25rem;">
+                    <div class="form-row" style="margin-top: 1.25rem; gap: 0.75rem;">
                         <button type="submit" class="button">Save Location</button>
-                        <a href="locations.html" class="button button-secondary">Cancel</a>
+                        <a 
+                            href="locations.html"
+                            class="button button-secondary"
+                            style="text-decoration: none; display: inline-flex; align-items: center;"
+                        >
+                            Cancel
+                        </a>
                     </div>
                 </form>
 
-                <p id="new-location-message" class="msg" style="margin-top: 0.75rem; display:none;"></p>
+                <p id="new-location-message" class="msg text-muted" style="margin-top: 0.75rem; display:none;"></p>
             </section>
         </main>
     </div>
 </body>
 </html>
+
