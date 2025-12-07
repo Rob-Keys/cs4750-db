@@ -39,9 +39,22 @@ switch ($segments[1]) {
         send_json_response(['data' => $reviews]);
         break;
     case 'createLocation':
-        createLocation($post_data['location_name'], $post_data['country'], $post_data['longitude'], $post_data['latitude']);
+        $trip_id = $post_data['trip_id'] ?? null;
+    
+        $location_id = createLocation(
+            $post_data['location_name'],
+            $post_data['country'],
+            $post_data['longitude'],
+            $post_data['latitude']
+        );
+    
+        if ($trip_id !== null && $trip_id !== '') {
+            addTripStop((int)$trip_id, (int)$location_id, null);
+        }
+    
         send_success();
         break;
+    
     case 'createUser':
         createUser($post_data['username'], $post_data['email'], $post_data['password'], $post_data['first_name'], $post_data['last_name']);
         send_success();
@@ -396,7 +409,9 @@ function createLocation($location_name, $country, $longitude, $latitude) {
     $stmt->bindValue(':longitude', $longitude);
     $stmt->bindValue(':latitude', $latitude);
     $stmt->execute();
+    $id = $db->lastInsertId();
     $stmt->closeCursor();
+    return $id;
 }
 
 
