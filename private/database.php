@@ -56,7 +56,16 @@ switch ($segments[1]) {
         break;
     
     case 'createUser':
-        createUser($post_data['username'], $post_data['email'], $post_data['password'], $post_data['first_name'], $post_data['last_name']);
+        createUser(
+            $post_data['username'],
+            $post_data['email'],
+            $post_data['password'],
+            $post_data['first_name'],
+            $post_data['last_name']
+        );
+    
+        $_SESSION['username'] = $post_data['username'];
+    
         send_success();
         break;
     case 'createTrip':
