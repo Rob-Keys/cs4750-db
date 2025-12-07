@@ -211,6 +211,76 @@ switch ($segments[1]) {
         $followers = getFollowers($username);
         send_json_response(['data' => $followers]);
         break;
+
+    case 'addComment':
+        $username = $_SESSION['username'] ?? null;
+        if (!$username) {
+            send_error("Not logged in", true);
+            exit();
+        }
+
+        $review_id    = isset($post_data['review_id']) ? (int)$post_data['review_id'] : null;
+        $comment_text = trim($post_data['comment_text'] ?? '');
+
+        if (!$review_id || $comment_text === '') {
+            send_error("Missing review_id or comment_text", true);
+            exit();
+        }
+
+        $date_written = date('Y-m-d H:i:s');
+        $comment_id = addComment($comment_text, $date_written, $username, $review_id);
+        send_json_response(['data' => ['comment_id' => $comment_id]]);
+        break;
+
+    case 'getCommentsForReview':
+        $review_id = isset($post_data['review_id']) ? (int)$post_data['review_id'] : null;
+        if (!$review_id) {
+            send_error("Missing review_id", true);
+            exit();
+        }
+
+        $limit  = isset($post_data['limit'])  ? (int)$post_data['limit']  : 20;
+        $offset = isset($post_data['offset']) ? (int)$post_data['offset'] : 0;
+
+        $comments = getCommentsForReview($review_id, $limit, $offset);
+        send_json_response(['data' => $comments]);
+        break;
+
+    case 'updateComment':
+        $username = $_SESSION['username'] ?? null;
+        if (!$username) {
+            send_error("Not logged in", true);
+            exit();
+        }
+
+        $comment_id   = isset($post_data['comment_id']) ? (int)$post_data['comment_id'] : null;
+        $comment_text = trim($post_data['comment_text'] ?? '');
+
+        if (!$comment_id || $comment_text === '') {
+            send_error("Missing comment_id or comment_text", true);
+            exit();
+        }
+
+        updateComment($comment_id, $username, $comment_text);
+        send_success();
+        break;
+
+    case 'deleteComment':
+        $username = $_SESSION['username'] ?? null;
+        if (!$username) {
+            send_error("Not logged in", true);
+            exit();
+        }
+
+        $comment_id = isset($post_data['comment_id']) ? (int)$post_data['comment_id'] : null;
+        if (!$comment_id) {
+            send_error("Missing comment_id", true);
+            exit();
+        }
+
+        deleteComment($comment_id, $username);
+        send_success();
+        break;
     default:
         send_error('Unknown endpoint', false);
 }
