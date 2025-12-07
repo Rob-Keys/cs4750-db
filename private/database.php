@@ -144,6 +144,73 @@ switch ($segments[1]) {
         $feed = getHomeFeed($username, $limit, $offset);
         send_json_response(['data' => $feed]);
         break;
+
+    case 'followUser':
+        $follower = $_SESSION['username'] ?? null;
+        $followee = $post_data['followee_username'] ?? null;
+
+        if (!$follower) {
+            send_error("Not logged in", true);
+            exit();
+        }
+
+        if (!$followee || $followee === $follower) {
+            send_error("Invalid follow target", true);
+            exit();
+        }
+
+        try {
+            followUser($follower, $followee);
+            send_success();
+        } catch (PDOException $e) {
+            // Ignore duplicate-key errors (already following)
+            if (isset($e->errorInfo[1]) && $e->errorInfo[1] == 1062) {
+                send_success();
+            } else {
+                send_error("Could not follow user", false);
+            }
+        }
+        break;
+
+    case 'unfollowUser':
+        $follower = $_SESSION['username'] ?? null;
+        $followee = $post_data['followee_username'] ?? null;
+
+        if (!$follower) {
+            send_error("Not logged in", true);
+            exit();
+        }
+
+        if (!$followee || $followee === $follower) {
+            send_error("Invalid unfollow target", true);
+            exit();
+        }
+
+        unfollowUser($follower, $followee);
+        send_success();
+        break;
+
+    case 'getFollowingForUser':
+        $username = $post_data['username'] ?? ($_SESSION['username'] ?? null);
+        if (!$username) {
+            send_error("Not logged in", true);
+            exit();
+        }
+
+        $following = getFollowing($username);
+        send_json_response(['data' => $following]);
+        break;
+
+    case 'getFollowersForUser':
+        $username = $post_data['username'] ?? ($_SESSION['username'] ?? null);
+        if (!$username) {
+            send_error("Not logged in", true);
+            exit();
+        }
+
+        $followers = getFollowers($username);
+        send_json_response(['data' => $followers]);
+        break;
     default:
         send_error('Unknown endpoint', false);
 }
