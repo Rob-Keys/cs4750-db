@@ -111,9 +111,14 @@ function renderReviews(reviews) {
         itinerary.textContent = review.itinerary
             ? `Itinerary: ${review.itinerary}`
             : 'Itinerary: (no locations recorded)';
+        
+        const reviewBody = document.createElement('div');
+        reviewBody.className = 'review-text';
+        reviewBody.textContent = review.written_review || "(No review text provided)";
 
         li.appendChild(header);
         li.appendChild(meta);
+        li.appendChild(reviewBody);
         li.appendChild(itinerary);
 
         const commentsSection = buildCommentsSection(review.review_id);

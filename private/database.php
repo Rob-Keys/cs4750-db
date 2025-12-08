@@ -1128,6 +1128,7 @@ function searchReviews($q, $limit, $offset) {
         $stmt = $db->prepare(
             "SELECT r.review_id,
                     r.rating,
+                    r.written_review,
                     r.date_written,
                     t.trip_id,
                     t.trip_title,
@@ -1143,8 +1144,8 @@ function searchReviews($q, $limit, $offset) {
                OR r.written_review LIKE CONCAT('%', :q2, '%')
                OR t.trip_title     LIKE CONCAT('%', :q3, '%')
                OR l.location_name  LIKE CONCAT('%', :q4, '%'))
-             GROUP BY r.review_id, r.rating, r.date_written,
-                      t.trip_id, t.trip_title, t.username
+             GROUP BY r.review_id, r.rating, r.written_review,
+                      r.date_written, t.trip_id, t.trip_title, t.username
              ORDER BY r.date_written DESC
              LIMIT :limit OFFSET :offset"
         );

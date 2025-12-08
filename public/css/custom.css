@@ -173,6 +173,9 @@ body {
   border-radius: 10px;
   padding: 0.9rem 1rem;
   border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .card-header {
@@ -195,6 +198,9 @@ body {
 
 .card-body {
   font-size: 0.9rem;
+  white-space: normal;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 /* Tags / pills */
@@ -224,4 +230,10 @@ body {
       align-items: flex-start;
       gap: 0.5rem;
   }
+}
+
+.review-text {
+  font-size: 0.92rem;
+  line-height: 1.35;
+  margin-bottom: 0.5rem;
 }
