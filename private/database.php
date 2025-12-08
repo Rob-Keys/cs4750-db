@@ -30,6 +30,9 @@ switch ($segments[1]) {
             case 'populate_db':
                 populate_db();
                 exit();
+            case 'display_db':
+                display_db();
+                exit();
             default:
                 send_error('Unknown dev endpoint', true);
                 exit();
@@ -652,12 +655,72 @@ function populate_db() {
         $stmt->execute();
     }
 
-    insert_pic($db, $stmt, 1, $image_path_1, 'The Beach!', '2025-07-25');
-    insert_pic($db, $stmt, 1, $image_path_2, 'Peru!', '2025-07-26');
-    insert_pic($db, $stmt, 3, $image_path_3, 'Downtown Nashville!', '2023-01-03');
-    insert_pic($db, $stmt, 8, $image_path_4, 'Scary highway.', '2024-11-07');
+    insert_pic($db, $stmt, 10, $image_path_1, 'The Beach!', '2025-07-25');
+    insert_pic($db, $stmt, 10, $image_path_2, 'Peru!', '2025-07-26');
+    insert_pic($db, $stmt, 17, $image_path_3, 'Downtown Nashville!', '2023-01-03');
+    insert_pic($db, $stmt, 4, $image_path_4, 'Scary highway.', '2024-11-07');
 
     $stmt->closeCursor();
 
+}
+
+function display_db() {
+    global $db;
+
+    // Get all table names
+    $stmt = $db->query("SHOW TABLES");
+    $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $output = "<!DOCTYPE html>\n<html>\n<body>\n";
+    $output .= "<h1>Database Contents</h1>\n";
+
+    foreach ($tables as $table) {
+        $output .= "<h2>Table: $table</h2>\n";
+
+        // Get row count
+        $countStmt = $db->query("SELECT COUNT(*) as count FROM `$table`");
+        $count = $countStmt->fetch()['count'];
+        $output .= "<div class='table-info'>Total rows: $count</div>\n";
+
+        if ($count > 0) {
+            // Get all data from the table
+            $dataStmt = $db->query("SELECT * FROM `$table`");
+            $rows = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($rows)) {
+                $output .= "<table>\n";
+
+                // Table headers
+                $output .= "<tr>\n";
+                foreach (array_keys($rows[0]) as $column) {
+                    $output .= "<th>" . $column . "</th>\n";
+                }
+                $output .= "</tr>\n";
+
+                // Table rows
+                foreach ($rows as $row) {
+                    $output .= "<tr>\n";
+                    foreach ($row as $column => $value) {
+                        // Special handling for binary data (images)
+                        if ($column === 'pic_data' && $value !== null) {
+                            $output .= "<td>[BINARY DATA - " . strlen($value) . " bytes]</td>\n";
+                        } else {
+                            $output .= "<td>" . htmlspecialchars($value ?? 'NULL') . "</td>\n";
+                        }
+                    }
+                    $output .= "</tr>\n";
+                }
+
+                $output .= "</table>\n";
+            }
+        } else {
+            $output .= "<div class='no-data'>No data in this table</div>\n";
+        }
+    }
+
+    $output .= "</body>\n</html>";
+
+    header('Content-Type: text/html');
+    echo $output;
 }
 ?>
