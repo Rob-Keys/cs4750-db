@@ -300,7 +300,22 @@ switch ($segments[1]) {
         updateReview($review_id, $username, (int)$rating, $review_text);
         send_success();
         break;
-    
+    case 'deleteReview':
+        $username = $_SESSION['username'] ?? null;
+        if (!$username) {
+            send_error('Not logged in', true);
+            exit();
+        }
+
+        $review_id = $post_data['review_id'] ?? null;
+        if ($review_id === null) {
+            send_error('Missing review_id', true);
+            exit();
+        }
+
+        deleteReview((int)$review_id, $username);
+        send_success();
+        break;
     default:
         send_error('Unknown endpoint', false);
 }

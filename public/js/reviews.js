@@ -129,12 +129,23 @@ function renderReviews(reviews) {
             editBtn.type = 'button';
             editBtn.className = 'button button-secondary';
             editBtn.textContent = 'Edit Review';
+            editBtn.style.marginRight = '0.5rem';
 
             editBtn.addEventListener('click', () => {
                 handleEditReview(review, reviewBody, ratingPill);
             });
 
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'button button-secondary';
+            deleteBtn.textContent = 'Delete Review';
+
+            deleteBtn.addEventListener('click', () => {
+                handleDeleteReview(review, li);
+            });
+
             actions.appendChild(editBtn);
+            actions.appendChild(deleteBtn);
             li.appendChild(actions);
         }
 
@@ -385,5 +396,35 @@ function handleEditReview(review, reviewBodyEl, ratingPillEl) {
     .catch(err => {
         console.error('Update review error:', err);
         alert('Unexpected error updating review: ' + err.message);
+    });
+}
+
+function handleDeleteReview(review, listItemEl) {
+    const confirmed = confirm('Are you sure you want to delete this review? This cannot be undone.');
+    if (!confirmed) {
+        return;
+    }
+
+    fetch('/api/deleteReview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ review_id: review.review_id })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error deleting review: ' + data.error);
+            return;
+        }
+
+        if (listItemEl && listItemEl.parentNode) {
+            listItemEl.parentNode.removeChild(listItemEl);
+        }
+
+        alert('Review deleted successfully.');
+    })
+    .catch(err => {
+        console.error('Delete review error:', err);
+        alert('Unexpected error deleting review: ' + err.message);
     });
 }
