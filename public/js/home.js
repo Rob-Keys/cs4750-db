@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Home page loaded');
+    console.log('Home: DOMContentLoaded fired');
 
     setupHeroCarousel();
     setupHomeFeed();
@@ -10,6 +10,7 @@ function setupHeroCarousel() {
     const heroCaption = document.getElementById('hero-caption');
 
     if (!heroImage || !heroCaption) {
+        console.log('Home: hero elements not found, skipping carousel');
         return;
     }
 
@@ -39,41 +40,66 @@ function setupHeroCarousel() {
 
 function setupHomeFeed() {
     const username = sessionStorage.getItem('username') ?? null;
-    if (!username) {
+    const listEl = document.getElementById('home-feed-list');
+    const emptyEl = document.getElementById('home-feed-empty');
+
+    console.log('Home: setupHomeFeed called');
+    console.log('Home: username from sessionStorage =', username);
+    console.log('Home: listEl found?', !!listEl, 'emptyEl found?', !!emptyEl);
+
+    if (!listEl || !emptyEl) {
+        console.warn('Home: home feed elements not found in DOM, not fetching feed');
         return;
     }
+
+    if (!username) {
+        console.log('Home: no username, showing sign-in message');
+        emptyEl.textContent = 'Sign in and follow other users to see their latest reviews here.';
+        emptyEl.style.display = 'block';
+        return;
+    }
+
+    console.log('Home: fetching /api/getHomeFeed...');
 
     fetch('/api/getHomeFeed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ limit: 10, offset: 0 })
+        body: JSON.stringify({ username, limit: 10, offset: 0 })
     })
-    .then(response => response.json())
+    .then(res => {
+        console.log('Home: getHomeFeed response status =', res.status);
+        return res.json();
+    })
     .then(data => {
+        console.log('Home: getHomeFeed JSON =', data);
+
         if (data.error) {
-            console.warn('Error loading home feed:', data.error);
+            emptyEl.textContent = 'Error loading feed: ' + data.error;
+            emptyEl.style.display = 'block';
             return;
         }
-        renderHomeFeed(data.data || []);
+
+        renderHomeFeed(data.data || [], listEl, emptyEl);
     })
     .catch(err => {
-        console.error('Home feed fetch error:', err);
+        console.error('Home: fetch error for getHomeFeed:', err);
+        emptyEl.textContent = 'Unexpected error loading feed.';
+        emptyEl.style.display = 'block';
     });
 }
 
-function renderHomeFeed(reviews) {
-    const list = document.getElementById('home-feed-list');
-    const empty = document.getElementById('home-feed-empty');
-
-    list.innerHTML = '';
+function renderHomeFeed(reviews, listEl, emptyEl) {
+    listEl.innerHTML = '';
 
     if (!reviews || reviews.length === 0) {
-        empty.textContent = 'No recent reviews from people you follow yet.';
-        empty.style.display = 'block';
+        console.log('Home: feed is empty array');
+        emptyEl.textContent = 'No recent reviews from people you follow yet.';
+        emptyEl.style.display = 'block';
         return;
     }
 
-    empty.style.display = 'none';
+    console.log('Home: rendering', reviews.length, 'feed items');
+    emptyEl.style.display = 'none';
 
     reviews.forEach(review => {
         const li = document.createElement('li');
@@ -107,6 +133,6 @@ function renderHomeFeed(reviews) {
         li.appendChild(meta);
         li.appendChild(itinerary);
 
-        list.appendChild(li);
+        listEl.appendChild(li);
     });
 }

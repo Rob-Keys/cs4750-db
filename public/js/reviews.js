@@ -12,17 +12,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     currentUser = sessionStorage.getItem('username') ?? null;
 
-    // Initial load
-    fetchReviews("");
+    const initPromise = currentUser
+        ? loadFollowingForCurrentUser()
+        : Promise.resolve();
 
-    // Search
+    initPromise.then(() => {
+        fetchReviews("");
+    });
+
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const q = searchInput.value.trim();
         fetchReviews(q);
     });
 
-    // Reset
     resetButton.addEventListener('click', () => {
         searchInput.value = "";
         fetchReviews("");
@@ -30,6 +33,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     addWriteReviewButton();
 });
+
+function fetchReviews(query = "") {
+    fetch('/api/searchReviews', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ q: query, limit: 50, offset: 0 })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error fetching reviews: ' + data.error);
+            return;
+        }
+        renderReviews(data.data);
+    })
+    .catch(err => {
+        console.error('Fetch error:', err);
+        alert('Unexpected error fetching reviews: ' + err.message);
+    });
+}
 
 function renderReviews(reviews) {
     reviewList.innerHTML = '';
@@ -98,29 +123,6 @@ function renderReviews(reviews) {
     });
 }
 
-
-function fetchReviews(query = "") {
-        fetch('/api/searchReviews', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ q: query, limit: 50, offset: 0 })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert('Error fetching reviews: ' + data.error);
-                return;
-            }
-            renderReviews(data.data);
-        })
-        .catch(err => {
-            console.error('Fetch error:', err);
-            alert('Unexpected error fetching reviews: ' + err.message);
-        });
-    }
-
 function addWriteReviewButton() {
     const writeReviewForm = document.getElementById('write-review-form');
     const username = sessionStorage.getItem('username') ?? null;
@@ -131,8 +133,9 @@ function addWriteReviewButton() {
     }
 }
 
+
 function loadFollowingForCurrentUser() {
-    fetch('/api/getFollowingForUser', {
+    return fetch('/api/getFollowingForUser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: currentUser })
@@ -143,7 +146,7 @@ function loadFollowingForCurrentUser() {
             console.warn('Error loading following:', data.error);
             return;
         }
-        followingSet = new Set(data.data || []); 
+        followingSet = new Set(data.data || []);
     })
     .catch(err => {
         console.error('Error fetching following:', err);
@@ -179,6 +182,7 @@ function toggleFollow(author, buttonEl) {
         alert('Unexpected error updating follow status.');
     });
 }
+
 
 function buildCommentsSection(reviewId) {
     const container = document.createElement('div');
