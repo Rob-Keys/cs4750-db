@@ -8,18 +8,22 @@ function getListsForUser($username) {
                 li.list_item_id,
                 li.list_index,
                 t.trip_id,
-                t.trip_title
+                t.trip_title,
+                loc.location_id,
+                loc.location_name
          FROM list l
          LEFT JOIN list_item li ON li.list_id = l.list_id
          LEFT JOIN trips t      ON t.trip_id = li.trip_id
+         LEFT JOIN trip_locations tl ON tl.trip_id = t.trip_id
+         LEFT JOIN locations loc ON loc.location_id = tl.location_id
          WHERE l.username = :username
-         ORDER BY l.list_id, li.list_index"
+         ORDER BY l.list_id, li.list_index, tl.trip_location_id"
     );
     $stmt->bindValue(':username', $username);
     $stmt->execute();
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $stmt->closeCursor();
-    return $rows; 
+    return $rows;
 }
 
 function createList($list_title, $username) {

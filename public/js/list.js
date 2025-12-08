@@ -14,11 +14,23 @@ async function fetchLists() {
             listsMap[row.list_id] = {
                 list_id: row.list_id,
                 list_title: row.list_title,
-                trips: []
+                trips: {}
             };
         }
         if (row.trip_id) {
-            listsMap[row.list_id].trips.push({ trip_id: row.trip_id, trip_title: row.trip_title });
+            if (!listsMap[row.list_id].trips[row.trip_id]) {
+                listsMap[row.list_id].trips[row.trip_id] = {
+                    trip_id: row.trip_id,
+                    trip_title: row.trip_title,
+                    locations: []
+                };
+            }
+            if (row.location_id && !listsMap[row.list_id].trips[row.trip_id].locations.some(loc => loc.location_id === row.location_id)) {
+                listsMap[row.list_id].trips[row.trip_id].locations.push({
+                    location_id: row.location_id,
+                    location_name: row.location_name
+                });
+            }
         }
     });
 
@@ -49,13 +61,28 @@ async function fetchLists() {
         listHeader.appendChild(deleteBtn);
         li.appendChild(listHeader);
 
-        if (list.trips.length > 0) {
+        const trips = Object.values(list.trips);
+        if (trips.length > 0) {
             const tripList = document.createElement('ul');
             tripList.style.marginLeft = '2rem';
             tripList.style.marginTop = '0.5rem';
-            list.trips.forEach(trip => {
+            trips.forEach(trip => {
                 const tripLi = document.createElement('li');
                 tripLi.textContent = trip.trip_title;
+                tripLi.style.marginBottom = '0.5rem';
+
+                if (trip.locations.length > 0) {
+                    const locationList = document.createElement('ul');
+                    locationList.style.marginLeft = '2rem';
+                    locationList.style.marginTop = '0.25rem';
+                    trip.locations.forEach(location => {
+                        const locationLi = document.createElement('li');
+                        locationLi.textContent = location.location_name;
+                        locationList.appendChild(locationLi);
+                    });
+                    tripLi.appendChild(locationList);
+                }
+
                 tripList.appendChild(tripLi);
             });
             li.appendChild(tripList);
