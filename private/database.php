@@ -313,7 +313,8 @@ function initialize_db() {
                 email VARCHAR(255) UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 first_name TEXT,
-                last_name TEXT
+                last_name TEXT,
+                is_admin BOOLEAN DEFAULT FALSE 
             );
             CREATE TABLE IF NOT EXISTS following (
                 follow_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -481,7 +482,12 @@ function create_stored_procedures() {
 }
 
 function destroy_db() {
-    # TODO: Add check if youre logged in as an admin user
+    $is_admin = is_admin($_SESSION['username'] ?? null);
+    if ($is_admin != true) {
+        send_error('Insufficient permissions. Admin required.', true);
+        exit();
+    }
+
     global $db;
     $stmt = "SET FOREIGN_KEY_CHECKS = 0;
             DROP TABLE IF EXISTS list_item;
@@ -502,23 +508,24 @@ function destroy_db() {
 function populate_db() {
     global $db;
     $sql = '
-        INSERT INTO users (username, email, password, first_name, last_name) VALUES 
-          ("jill","jill@gmail.com", "jill", "Jill", "Smith"), 
-          ("alex", "alex@gmail.com", "alex", "Alex", "Petullo"),
-          ("chandler", "chandler@virginia.edu", "chandler", "Chandler", "Morris"), 
-          ("jeremy","ehb3rt@virginia.edu", "jeremy", "Jeremy", "Grossman"), 
-          ("kingjames","lebron@gmail.com", "lebron", "LeBron", "James"), 
-          ("tswift", "taylor@gmail.com", "taytay","Taylor", "Swift"), 
-          ("dacount", "dracula@gmail.com", "blood", "Count", "Dracula"),
-          ("spiderman", "spiderman@gmail.com", "spidey", "Peter", "Parker"), 
-          ("honestabe", "abe@gmail.com", "pres16", "Abraham", "Lincoln"), 
-          ("ScienceGuy", "billnye@gmail.com","billbillbill", "Bill", "Nye"), 
-          ("JimRyan", "jimryan@gmail.com", "Pres", "Jim", "Ryan"),
-          ("JaneAusten", "Jane@gmail.com", "author", "Jane", "Austen"), 
-          ("coachodom","rodom@gmail.com", "fastpace", "Ryan", "Odom"), 
-          ("Mstreep", "meryl@gmail.com","oscarwinner", "Meryl", "Streep"), 
-          ("MadTitan", "thanos@gmail.com", "infinitystones","Thanos", "Thanos"), 
-          ("ironman", "ironman@gmail.com", "iamironman", "Tony", "Stark");
+        INSERT INTO users (username, email, password, first_name, last_name, is_admin) VALUES
+          ("jill","jill@gmail.com", "jill", "Jill", "Smith", false),
+          ("alex", "alex@gmail.com", "alex", "Alex", "Petullo", false),
+          ("chandler", "chandler@virginia.edu", "chandler", "Chandler", "Morris", false),
+          ("jeremy","ehb3rt@virginia.edu", "jeremy", "Jeremy", "Grossman", false),
+          ("kingjames","lebron@gmail.com", "lebron", "LeBron", "James", true),
+          ("tswift", "taylor@gmail.com", "taytay","Taylor", "Swift", false),
+          ("dacount", "dracula@gmail.com", "blood", "Count", "Dracula", false),
+          ("spiderman", "spiderman@gmail.com", "spidey", "Peter", "Parker", false),
+          ("honestabe", "abe@gmail.com", "pres16", "Abraham", "Lincoln", false),
+          ("ScienceGuy", "billnye@gmail.com","billbillbill", "Bill", "Nye", false),
+          ("JimRyan", "jimryan@gmail.com", "Pres", "Jim", "Ryan", true),
+          ("JaneAusten", "Jane@gmail.com", "author", "Jane", "Austen", false),
+          ("coachodom","rodom@gmail.com", "fastpace", "Ryan", "Odom", false),
+          ("Mstreep", "meryl@gmail.com","oscarwinner", "Meryl", "Streep", false),
+          ("MadTitan", "thanos@gmail.com", "infinitystones","Thanos", "Thanos", false),
+          ("ironman", "ironman@gmail.com", "iamironman", "Tony", "Stark", false),
+          ("admin", "admin@admin.com", "$2y$10$OS2QvbrYuFam3FwaOdEPq.00FILSMooMfoXXBieWjvzjdrYVIqfPW", "Admin", "User", true);
           
         INSERT INTO following (follower_username, followee_username) VALUES
           ("dacount","MadTitan"), 
@@ -665,6 +672,11 @@ function populate_db() {
 }
 
 function display_db() {
+    $is_admin = is_admin($_SESSION['username'] ?? null);
+    if ($is_admin != true) {
+        send_error('Insufficient permissions. Admin required.', true);
+        exit();
+    }
     global $db;
 
     // Get all table names

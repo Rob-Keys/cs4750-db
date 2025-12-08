@@ -6,8 +6,8 @@ function createUser($username, $email, $password, $first_name, $last_name) {
     }
     global $db;
     $stmt = $db->prepare(
-        "INSERT INTO users (username, email, password, first_name, last_name)
-         VALUES (:username, :email, :password_hash, :first_name, :last_name)"
+        "INSERT INTO users (username, email, password, first_name, last_name, permission_level)
+         VALUES (:username, :email, :password_hash, :first_name, :last_name, 0)"
     );
     $stmt->bindValue(':username', $username);
     $stmt->bindValue(':email', $email);
@@ -164,5 +164,23 @@ function getFollowing($username) {
     $result = $stmt->fetchAll(PDO::FETCH_COLUMN);
     $stmt->closeCursor();
     return $result;
+}
+
+function is_admin($username) {
+    if(!$username) {
+        return 0;
+    }
+    global $db;
+    $stmt = $db->prepare(
+        "SELECT is_admin
+         FROM users
+         WHERE username = :username
+         LIMIT 1"
+    );
+    $stmt->bindValue(':username', $username);
+    $stmt->execute();
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt->closeCursor();
+    return $result ? (int)$result['is_admin'] : false;
 }
 ?>
