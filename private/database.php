@@ -397,8 +397,70 @@ function initialize_db() {
                 trip_id INT,
                 FOREIGN KEY (list_id) REFERENCES list(list_id) ON DELETE CASCADE,
                 FOREIGN KEY (trip_id) REFERENCES trips(trip_id) ON DELETE CASCADE
-            );";
+            );
+            ALTER TABLE trips 
+            ADD CONSTRAINT chk_trip_dates 
+            CHECK (start_date IS NULL OR end_date IS NULL OR end_date >= start_date);
+
+            ALTER TABLE reviews 
+            ADD CONSTRAINT chk_review_rating 
+            CHECK (rating BETWEEN 1 AND 5);
+
+            ALTER TABLE locations 
+            ADD CONSTRAINT chk_latitude  CHECK (latitude  BETWEEN -90  AND 90),
+            ADD CONSTRAINT chk_longitude CHECK (longitude BETWEEN -180 AND 180);
+
+            ALTER TABLE list_item 
+            ADD CONSTRAINT chk_list_index_nonneg 
+            CHECK (list_index >= 0);";
+
     $db->exec($stmt);
+    create_stored_procedures();
+}
+function create_stored_procedures() {
+    global $db;
+
+    try {
+        $db->exec("DROP PROCEDURE IF EXISTS sp_get_user_feed");
+    } catch (PDOException $e) {
+    }
+
+    $procSql = "
+        CREATE PROCEDURE sp_get_user_feed (
+            IN p_username VARCHAR(255),
+            IN p_limit INT
+        )
+        BEGIN
+            SELECT r.review_id, 
+                   r.rating, 
+                   r.written_review, 
+                   r.date_written, 
+                   t.trip_id, 
+                   t.trip_title, 
+                   t.start_date, 
+                   t.end_date, 
+                   t.username AS author, 
+                   GROUP_CONCAT(DISTINCT l.location_name 
+                                ORDER BY tl.trip_location_id 
+                                SEPARATOR ' -> ') AS itinerary 
+            FROM following f 
+            JOIN trips t           ON t.username = f.followee_username 
+            JOIN reviews r         ON r.trip_id  = t.trip_id 
+            LEFT JOIN trip_locations tl ON tl.trip_id = t.trip_id 
+            LEFT JOIN locations l       ON l.location_id = tl.location_id 
+            WHERE f.follower_username = p_username 
+            GROUP BY r.review_id, r.rating, r.written_review, r.date_written, 
+                     t.trip_id, t.trip_title, t.start_date, t.end_date, t.username 
+            ORDER BY r.date_written DESC 
+            LIMIT p_limit;
+        END
+    ";
+
+    try {
+        $db->exec($procSql);
+    } catch (PDOException $e) {
+        echo $e->getMessage();
+    }
 }
 
 function destroy_db() {
@@ -975,6 +1037,25 @@ function getReviewsForUser($username) {
 
 function getHomeFeed($viewer_username, $limit, $offset) {
     global $db;
+
+    // Try using the stored procedure
+    try {
+        $stmt = $db->prepare("CALL sp_get_user_feed(:username, :limit)");
+        $stmt->bindValue(':username', $viewer_username);
+        $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->closeCursor();
+
+
+        if ($results !== false) {
+            return $results;
+        }
+    } catch (PDOException $e) {
+    }
+
+    // Fallback
     $stmt = $db->prepare(
         "SELECT r.review_id,
                 r.rating,
@@ -1009,6 +1090,7 @@ function getHomeFeed($viewer_username, $limit, $offset) {
     $stmt->closeCursor();
     return $results;
 }
+
 
 
 function searchReviews($q, $limit, $offset) {
