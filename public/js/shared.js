@@ -1,10 +1,11 @@
-export function getUserLists() {
+export function getUserLists(username = null) {
+    const targetUsername = username || sessionStorage.getItem('username');
     return fetch('/api/getListsForUser', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username: sessionStorage.getItem('username') })
+        body: JSON.stringify({ username: targetUsername })
     })
     .then(response => response.json())
     .then(data => {
@@ -16,13 +17,14 @@ export function getUserLists() {
     });
 }
 
-export function getUserTrips() {
+export function getUserTrips(username = null) {
+    const targetUsername = username || sessionStorage.getItem('username');
     return fetch('/api/getTripsForUser', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username: sessionStorage.getItem('username') })
+        body: JSON.stringify({ username: targetUsername })
     })
     .then(response => response.json())
     .then(data => {
@@ -34,13 +36,14 @@ export function getUserTrips() {
     });
 }
 
-export function getUserReviews() {
+export function getUserReviews(username = null) {
+    const targetUsername = username || sessionStorage.getItem('username');
     return fetch('/api/getReviewsForUser', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username: sessionStorage.getItem('username') })
+        body: JSON.stringify({ username: targetUsername })
     })
     .then(response => response.json())
     .then(data => {
@@ -52,13 +55,14 @@ export function getUserReviews() {
     });
 }
 
-export function getUserFollowers() {
+export function getUserFollowers(username = null) {
+    const targetUsername = username || sessionStorage.getItem('username');
     return fetch('/api/getFollowersForUser', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username: sessionStorage.getItem('username') })
+        body: JSON.stringify({ username: targetUsername })
     })
     .then(response => response.json())
     .then(data => {
@@ -70,13 +74,14 @@ export function getUserFollowers() {
     });
 }
 
-export function getUserFollowing() {
+export function getUserFollowing(username = null) {
+    const targetUsername = username || sessionStorage.getItem('username');
     return fetch('/api/getFollowingForUser', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username: sessionStorage.getItem('username') })
+        body: JSON.stringify({ username: targetUsername })
     })
     .then(response => response.json())
     .then(data => {

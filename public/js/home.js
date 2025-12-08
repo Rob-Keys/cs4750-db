@@ -121,7 +121,16 @@ function renderHomeFeed(reviews, listEl, emptyEl) {
 
         const meta = document.createElement('div');
         meta.className = 'card-meta';
-        meta.textContent = `By ${review.author} • ${review.date_written}`;
+
+        const metaText = document.createElement('span');
+        const authorLink = document.createElement('a');
+        authorLink.href = `userprofile.html?username=${encodeURIComponent(review.author)}`;
+        authorLink.textContent = review.author;
+        authorLink.style.color = 'inherit';
+
+        metaText.appendChild(authorLink);
+        metaText.appendChild(document.createTextNode(` • ${review.date_written}`));
+        meta.appendChild(metaText);
 
         const itinerary = document.createElement('div');
         itinerary.className = 'card-body';

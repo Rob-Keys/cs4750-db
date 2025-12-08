@@ -88,7 +88,15 @@ async function renderReviews(reviews) {
         meta.className = 'card-meta';
 
         const metaText = document.createElement('span');
-        metaText.textContent = `By ${review.author} • ${review.date_written}`;
+        metaText.textContent = 'By ';
+
+        const authorLink = document.createElement('a');
+        authorLink.href = `userprofile.html?username=${encodeURIComponent(review.author)}`;
+        authorLink.textContent = review.author;
+        authorLink.style.color = 'inherit';
+
+        metaText.appendChild(authorLink);
+        metaText.appendChild(document.createTextNode(` • ${review.date_written}`));
         meta.appendChild(metaText);
 
         if (currentUser && currentUser !== review.author) {
@@ -253,24 +261,13 @@ function buildCommentsSection(reviewId) {
     toggleBtn.className = 'button button-secondary';
     toggleBtn.textContent = 'Show comments';
 
+    const commentsContainer = document.createElement('div');
+    commentsContainer.style.display = 'none';
+
     const commentsList = document.createElement('ul');
     commentsList.className = 'list mt-sm';
-    commentsList.style.display = 'none';
 
-    let visible = false;
-
-    toggleBtn.addEventListener('click', () => {
-        visible = !visible;
-        commentsList.style.display = visible ? 'block' : 'none';
-        toggleBtn.textContent = visible ? 'Hide comments' : 'Show comments';
-
-        if (visible && commentsList.childElementCount === 0) {
-            loadCommentsForReview(reviewId, commentsList);
-        }
-    });
-
-    container.appendChild(toggleBtn);
-    container.appendChild(commentsList);
+    commentsContainer.appendChild(commentsList);
 
     if (currentUser) {
         const form = document.createElement('form');
@@ -281,12 +278,15 @@ function buildCommentsSection(reviewId) {
         textarea.style.minHeight = '60px';
         textarea.placeholder = 'Leave a comment...';
 
+        const buffer = document.createElement('div');
+
         const submitBtn = document.createElement('button');
         submitBtn.type = 'submit';
         submitBtn.className = 'button mt-sm';
         submitBtn.textContent = 'Post Comment';
 
         form.appendChild(textarea);
+        form.appendChild(buffer);
         form.appendChild(submitBtn);
 
         form.addEventListener('submit', (e) => {
@@ -306,8 +306,23 @@ function buildCommentsSection(reviewId) {
                 });
         });
 
-        container.appendChild(form);
+        commentsContainer.appendChild(form);
     }
+
+    let visible = false;
+
+    toggleBtn.addEventListener('click', () => {
+        visible = !visible;
+        commentsContainer.style.display = visible ? 'block' : 'none';
+        toggleBtn.textContent = visible ? 'Hide comments' : 'Show comments';
+
+        if (visible && commentsList.childElementCount === 0) {
+            loadCommentsForReview(reviewId, commentsList);
+        }
+    });
+
+    container.appendChild(toggleBtn);
+    container.appendChild(commentsContainer);
 
     return container;
 }
@@ -342,7 +357,14 @@ function loadCommentsForReview(reviewId, listEl) {
 
             const header = document.createElement('div');
             header.className = 'card-meta';
-            header.textContent = `${comment.commenter_username} • ${comment.date_written}`;
+
+            const commenterLink = document.createElement('a');
+            commenterLink.href = `userprofile.html?username=${encodeURIComponent(comment.commenter_username)}`;
+            commenterLink.textContent = comment.commenter_username;
+            commenterLink.style.color = 'inherit';
+
+            header.appendChild(commenterLink);
+            header.appendChild(document.createTextNode(` • ${comment.date_written}`));
 
             const body = document.createElement('div');
             body.className = 'card-body';

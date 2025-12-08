@@ -6,7 +6,7 @@ function createUser($username, $email, $password, $first_name, $last_name) {
     }
     global $db;
     $stmt = $db->prepare(
-        "INSERT INTO users (username, email, password, first_name, last_name, permission_level)
+        "INSERT INTO users (username, email, password, first_name, last_name, is_admin)
          VALUES (:username, :email, :password_hash, :first_name, :last_name, 0)"
     );
     $stmt->bindValue(':username', $username);
