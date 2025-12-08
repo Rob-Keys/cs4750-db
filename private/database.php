@@ -412,8 +412,36 @@ function initialize_db() {
 
             ALTER TABLE list_item 
             ADD CONSTRAINT chk_list_index_nonneg 
-            CHECK (list_index >= 0);";
+            CHECK (list_index >= 0);
+            
+            ";
 
+        $triggers = "
+            DROP TRIGGER IF EXISTS trg_review_set_date;
+            DROP TRIGGER IF EXISTS trg_review_update_date;
+
+            DELIMITER //
+
+            CREATE TRIGGER trg_review_set_date
+            BEFORE INSERT ON reviews
+            FOR EACH ROW
+            BEGIN
+                IF NEW.date_written IS NULL THEN
+                    SET NEW.date_written = NOW();
+                END IF;
+            END//
+
+            CREATE TRIGGER trg_review_update_date
+            BEFORE UPDATE ON reviews
+            FOR EACH ROW
+            BEGIN
+                SET NEW.date_written = NOW();
+            END//
+
+            DELIMITER ;
+            ";
+
+    $db->exec($triggers);
     $db->exec($stmt);
     create_stored_procedures();
 }
