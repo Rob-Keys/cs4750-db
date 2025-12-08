@@ -18,12 +18,21 @@ $segments = explode('/', trim($path, '/'));
 $post_data = json_decode(file_get_contents('php://input'), true);
 
 switch ($segments[1]) {
-    case 'initialize_db':
-        initialize_db();
-        exit();
-    case 'destroy_db':
-        destroy_db();
-        exit();
+    case 'dev':
+        switch($segments[2]) {
+            case 'initialize_db':
+                initialize_db();
+                exit();
+            case 'destroy_db':
+                destroy_db();
+                exit();
+            case 'populate_db':
+                populate_db();
+                exit();
+            default:
+                send_error('Unknown dev endpoint', true);
+                exit();
+        }
     case 'searchLocations':
         $locations = searchLocations($post_data['q'], $post_data['limit'], $post_data['offset']);
         send_json_response(['data' => $locations]);
@@ -190,7 +199,7 @@ switch ($segments[1]) {
         send_success();
         break;
     default:
-        send_error('Unknown endpoint', false);
+        send_error('Unknown endpoint', true);
 }
 
 function send_success() {
@@ -265,7 +274,7 @@ function initialize_db() {
             CREATE TABLE IF NOT EXISTS transportation (
                 transit_id INT AUTO_INCREMENT PRIMARY KEY,
                 transit_type TEXT,
-                transit_length INT
+                transit_length TEXT
             );
             CREATE TABLE IF NOT EXISTS trip_locations (
                 trip_location_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -288,9 +297,9 @@ function initialize_db() {
                 comment_id INT AUTO_INCREMENT PRIMARY KEY,
                 comment_text TEXT NOT NULL,
                 date_written DATE,
-                commenter_username VARCHAR(255),
+                username VARCHAR(255),
                 review_id INT,
-                FOREIGN KEY (commenter_username) REFERENCES users(username) ON DELETE CASCADE,
+                FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE,
                 FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE
             );
             CREATE TABLE IF NOT EXISTS list (
@@ -322,36 +331,32 @@ function initialize_db() {
             ALTER TABLE list_item 
             ADD CONSTRAINT chk_list_index_nonneg 
             CHECK (list_index >= 0);
+            ";
             
-            ";
-
-        $triggers = "
-            DROP TRIGGER IF EXISTS trg_review_set_date;
-            DROP TRIGGER IF EXISTS trg_review_update_date;
-
-            DELIMITER //
-
-            CREATE TRIGGER trg_review_set_date
-            BEFORE INSERT ON reviews
-            FOR EACH ROW
-            BEGIN
-                IF NEW.date_written IS NULL THEN
-                    SET NEW.date_written = NOW();
-                END IF;
-            END//
-
-            CREATE TRIGGER trg_review_update_date
-            BEFORE UPDATE ON reviews
-            FOR EACH ROW
-            BEGIN
-                SET NEW.date_written = NOW();
-            END//
-
-            DELIMITER ;
-            ";
-
-    $db->exec($triggers);
     $db->exec($stmt);
+    
+    $db->exec("DROP TRIGGER IF EXISTS trg_review_set_date");
+    $db->exec("
+        CREATE TRIGGER trg_review_set_date
+        BEFORE INSERT ON reviews
+        FOR EACH ROW
+        BEGIN
+            IF NEW.date_written IS NULL THEN
+                SET NEW.date_written = NOW();
+            END IF;
+        END
+    ");
+
+    $db->exec("DROP TRIGGER IF EXISTS trg_review_update_date");
+    $db->exec("
+        CREATE TRIGGER trg_review_update_date
+        BEFORE UPDATE ON reviews
+        FOR EACH ROW
+        BEGIN
+            SET NEW.date_written = NOW();
+        END
+    ");
+
     create_stored_procedures();
 }
 function create_stored_procedures() {
@@ -414,5 +419,140 @@ function destroy_db() {
             DROP TABLE IF EXISTS following;
             DROP TABLE IF EXISTS users;";
     $db->exec($stmt);
+}
+
+function populate_db() {
+    global $db;
+    $sql = '
+        INSERT INTO users (username, email, password, first_name, last_name) VALUES 
+          ("jill","jill@gmail.com", "jill", "Jill", "Smith"), 
+          ("alex", "alex@gmail.com", "alex", "Alex", "Petullo"),
+          ("chandler", "chandler@virginia.edu", "chandler", "Chandler", "Morris"), 
+          ("jeremy","ehb3rt@virginia.edu", "jeremy", "Jeremy", "Grossman"), 
+          ("kingjames","lebron@gmail.com", "lebron", "LeBron", "James"), 
+          ("tswift", "taylor@gmail.com", "taytay","Taylor", "Swift"), 
+          ("dacount", "dracula@gmail.com", "blood", "Count", "Dracula"),
+          ("spiderman", "spiderman@gmail.com", "spidey", "Peter", "Parker"), 
+          ("honestabe", "abe@gmail.com", "pres16", "Abraham", "Lincoln"), 
+          ("ScienceGuy", "billnye@gmail.com","billbillbill", "Bill", "Nye"), 
+          ("JimRyan", "jimryan@gmail.com", "Pres", "Jim", "Ryan"),
+          ("JaneAusten", "Jane@gmail.com", "author", "Jane", "Austen"), 
+          ("coachodom","rodom@gmail.com", "fastpace", "Ryan", "Odom"), 
+          ("Mstreep", "meryl@gmail.com","oscarwinner", "Meryl", "Streep"), 
+          ("MadTitan", "thanos@gmail.com", "infinitystones","Thanos", "Thanos"), 
+          ("ironman", "ironman@gmail.com", "iamironman", "Tony", "Stark");
+          
+        INSERT INTO following (follower_username, followee_username) VALUES
+          ("dacount","MadTitan"), 
+          ("kingjames","tswift"), 
+          ("tswift","kingjames"),
+          ("honestabe","ironman"), 
+          ("alex","chandler"), 
+          ("chandler","coachodom"),
+          ("ironman","spiderman"), 
+          ("coachodom","spiderman"), 
+          ("spiderman","ironman"),
+          ("ironman","ScienceGuy"), 
+          ("alex","jill"), 
+          ("Mstreep","jeremy"), 
+          ("jeremy","spiderman"),
+          ("kingjames","spiderman");
+          
+        INSERT INTO trips (trip_title, start_date,end_date, username) VALUES 
+          ("Paris trip!", "2025-07-24", "2025-07-31", "tswift"), 
+          ("London trip!", "2025-08-01", "2025-08-11", "tswift"), 
+          ("nashvilletrip with friends", "2023-01-01", "2023-01-09", "alex"), 
+          ("football game in cali", "2025-10-26", "2025-11-01", "chandler"), 
+          ("basketball game in lousville", "2025-09-26", "2025-09-29", "coachodom"), 
+          ("sucking blood in transylvania", "2019-02-06", "2019-02-15", "dacount"),
+          ("visting family up north", "2020-01-03", "2020-02-10", "honestabe"), 
+          ("saving theworld", "2024-11-04", "2024-11-10", "ironman"), 
+          ("visiting canada", "2022-03-04", "2022-03-12", "kingjames"), 
+          ("visiting detroit", "2021-09-14", "2021-09-22", "JaneAusten"), 
+          ("germany studyabroad", "2023-12-31", "2024-01-09", "jeremy"), 
+          ("going up the hill", "2023-11-30", "2023-12-05", "jill"), 
+          ("visiting UVA", "2025-01-31", "2025-02-02", "JimRyan"), 
+          ("fishing trip", "2025-02-03", "2025-02-04", "JimRyan"), 
+          ("game 1", "2025-10-01", "2025-10-04", "kingjames"),
+          ("rehab", "2025-10-11", "2025-10-18", "kingjames"), 
+          ("visiting my family", "2025-10-20", "2025-10-27", "kingjames"), 
+          ("Oscars", "2024-10-10", "2024-10-17", "Mstreep"), 
+          ("Filming show inHollywood", "2024-01-10", "2024-01-17", "ScienceGuy"), 
+          ("fighting green goblin", "2024-03-02", "2024-03-06", "spiderman");
+          
+        INSERT INTO locations (location_name, country, longitude, latitude) VALUES 
+          ("Paris","France",2.35,48.86), 
+          ("London","United Kingdom",-0.13,51.51),
+          ("Nashville","United States",-86.78,36.16), 
+          ("Berkeley","United States", -122.27,37.87), 
+          ("Louisville","United States",-85.77,38.25), 
+          ("Transylvania", "Romania",25.22, 46.18),
+          ("Toronto", "Canada", -79.38, 43.65), 
+          ("Rio de Janeiro", "Brazil", -43.17, -22.91), 
+          ("Calgary", "Canada", -114.07, 51.04), 
+          ("Detroit","United States",-83.04,42.33),
+          ("Dortmund","Germany",7.47,51.51), 
+          ("Boise","United States", -116.20,43.62),
+          ("Charlottesville","United States",-78.48,38.03),
+          ("Athens","Greece",23.73,37.98), 
+          ("Los Angeles","United States",-118.24,34.05),
+          ("Akron","United States",-81.52,41.08), 
+          ("Cleveland","United States",-81.69,41.50), 
+          ("NewYork City","United States",-73.98,40.75), 
+          ("Secaucus", "United States", -74.05, 40.79),
+          ("Beijing", "China", 116.41, 39.90);
+          
+        INSERT INTO transportation (transit_type, transit_length) VALUES 
+          ("car", "<1 hour"), ("car", "1-2 hours"), ("car", "3-4 hours"), ("car", "5-8 hours"),
+          ("car", "9-15 hours"), ("car", "16-24 hours"), ("car", ">24 hours"), ("train", "<1 hour"), ("train","1-2 hours"), 
+          ("train", "3-4 hours"), ("train", "5-8 hours"), ("train", "9-15 hours"), ("train", "16-24 hours"), ("train", ">24 hours"), 
+          ("plane", "<1 hour"), ("plane", "1-2 hours"), ("plane", "3-4 hours"), ("plane", "5-8 hours"), ("plane", "9-15 hours"), 
+          ("plane", "16-24 hours"), ("plane", ">24 hours"), ("bus", "<1 hour"), ("bus", "1-2 hours"), ("bus", "3-4 hours"), 
+          ("bus", "5-8 hours"), ("bus", "9-15 hours"), ("bus", "24 hours"), ("bus", ">24 hours"), ("boat", "<1 hour"), 
+          ("boat", "1-2 hours"), ("boat", "3-4 hours"), ("boat", "5-8 hours"), ("boat", "9-15 hours"), ("boat", "16-24 hours"), 
+          ("boat", ">24 hours");
+          
+        INSERT INTO trip_locations (trip_id, location_id, transit_id) VALUES 
+          (1,1,19), (2,2,19),(3,3,3), (4,4,14), (5,5,11), (6,6,32), (7,7,6), (8,8,19), 
+          (9,9,7), (10,10,5), (11,11,4),(12,12,5), (13,13,6), (14,14,33), (15,15,10), 
+          (16,16,9), (17,17,6), (18,18,8), (19,15,3),(20,20,27);
+          
+        INSERT INTO reviews (rating,written_review,date_written,trip_id) VALUES 
+          (4,"goodtrip","2025-10-08",1), 
+          (4,"good trip","2025-11-18",2), 
+          (3,"mid trip","2025-11-09",3),
+          (2,"awful","2025-11-19",4), 
+          (3,"decent","2025-12-08",5), 
+          (3,"good trip","2025-11-18",6),
+          (5,"good trip","2025-11-08",7), 
+          (5,"time of my life","2025-12-08",8), 
+          (5,"great trip","2025-12-18",9), 
+          (3,"mid trip","2025-12-25",10), 
+          (1,"bad trip","2025-12-24",11), 
+          (2,"bad trip","2025-12-29",12), 
+          (2,"bad trip","2025-12-30",13), 
+          (1,"i nearly died","2025-12-31",14), 
+          (4,"goodtrip","2025-11-11",15), 
+          (4,"good trip","2025-12-15",16), 
+          (3,"mediocre trip","2025-11-29",17),
+          (2,"bad trip","2025-11-28",18), 
+          (5,"good trip","2025-11-30",19), 
+          (5,"i met my wife","2024-04-08",20);
+          
+        INSERT INTO comments (comment_text, date_written, username, review_id) VALUES 
+          ("IAgree", "2026-02-03", "alex",1), 
+          ("I Disagree", "2026-02-05", "coachodom",1), 
+          ("I disagreeand I hate you", "2026-12-03", "dacount",2), 
+          ("I went there last summer! so fun", "2026-01-03", "honestabe", 3), 
+          ("Thinking of going there soon; know any good restaurants?", "2026-07-07", "kingjames",6);
+          
+        INSERT INTO list (list_title, username) VALUES 
+          ("concert locations", "tswift"), 
+          ("fun basketball spots", "kingjames"),
+          ("blood sucking locations", "dacount"), 
+          ("good fight locations", "spiderman"), 
+          ("my favoritetrips ever", "JimRyan");
+    ';
+    $db->exec($sql);
 }
 ?>
