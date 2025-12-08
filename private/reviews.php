@@ -194,6 +194,25 @@ function getReviewsForUser($username) {
     return $results;
 }
 
+function getReviewByTripId($trip_id) {
+    global $db;
+    $stmt = $db->prepare(
+        "SELECT r.review_id,
+                r.rating,
+                r.written_review,
+                r.date_written,
+                r.trip_id
+         FROM reviews r
+         WHERE r.trip_id = :trip_id
+         LIMIT 1"
+    );
+    $stmt->bindValue(':trip_id', $trip_id, PDO::PARAM_INT);
+    $stmt->execute();
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt->closeCursor();
+    return $result;
+}
+
 function getHomeFeed($viewer_username, $limit, $offset) {
     if(!$viewer_username) {
         send_error("Not logged in", true);

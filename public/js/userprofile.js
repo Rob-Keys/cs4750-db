@@ -1,4 +1,4 @@
-import { getUserLists, getUserTrips, getUserReviews } from './shared.js';
+import { getUserLists, getUserTrips, getUserReviews, getUserFollowers, getUserFollowing } from './shared.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     createSignOutButton();
@@ -49,6 +49,8 @@ function loadUserProfile() {
     let user_trips = document.getElementById('user-trips');
     let user_lists = document.getElementById('user-lists');
     let user_reviews = document.getElementById('user-reviews');
+    let user_followers = document.getElementById('user-followers');
+    let user_following = document.getElementById('user-following');
 
     username_field.textContent = sessionStorage.getItem('username');
     getUserTrips().then(trips => {
@@ -71,5 +73,33 @@ function loadUserProfile() {
             li.textContent = `Rating: ${review.rating}, Review: ${review.written_review}, Date: ${review.date_written}`;
             user_reviews.appendChild(li);
         });
+    });
+    getUserFollowers().then(followers => {
+        if (followers && followers.length > 0) {
+            followers.forEach(follower => {
+                let li = document.createElement('li');
+                li.textContent = follower;
+                user_followers.appendChild(li);
+            });
+        } else {
+            let li = document.createElement('li');
+            li.textContent = 'No followers yet';
+            li.style.fontStyle = 'italic';
+            user_followers.appendChild(li);
+        }
+    });
+    getUserFollowing().then(following => {
+        if (following && following.length > 0) {
+            following.forEach(user => {
+                let li = document.createElement('li');
+                li.textContent = user;
+                user_following.appendChild(li);
+            });
+        } else {
+            let li = document.createElement('li');
+            li.textContent = 'Not following anyone yet';
+            li.style.fontStyle = 'italic';
+            user_following.appendChild(li);
+        }
     });
 }

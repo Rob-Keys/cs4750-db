@@ -56,7 +56,7 @@ function fetchReviews(query = "") {
     });
 }
 
-function renderReviews(reviews) {
+async function renderReviews(reviews) {
     reviewList.innerHTML = '';
 
     if (!reviews || reviews.length === 0) {
@@ -66,7 +66,7 @@ function renderReviews(reviews) {
 
     emptyMessage.style.display = 'none';
 
-    reviews.forEach(review => {
+    for (const review of reviews) {
         const li = document.createElement('li');
         li.className = 'card';
 
@@ -121,6 +121,34 @@ function renderReviews(reviews) {
         li.appendChild(reviewBody);
         li.appendChild(itinerary);
 
+        const pictures = await fetchPicturesForTrip(review.trip_id);
+        if (pictures && pictures.length > 0) {
+            const imageContainer = document.createElement('div');
+            imageContainer.style.display = 'flex';
+            imageContainer.style.gap = '0.5rem';
+            imageContainer.style.flexWrap = 'wrap';
+            imageContainer.style.marginTop = '0.75rem';
+
+            pictures.forEach(picture => {
+                const img = document.createElement('img');
+                img.src = `/api/getPicture?picture_id=${picture.picture_id}`;
+                img.alt = picture.pic_caption || 'Trip photo';
+                img.style.width = '150px';
+                img.style.height = '150px';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '4px';
+                img.style.cursor = 'pointer';
+
+                img.onclick = function() {
+                    window.open(this.src, '_blank');
+                };
+
+                imageContainer.appendChild(img);
+            });
+
+            li.appendChild(imageContainer);
+        }
+
         if (currentUser && currentUser === review.author) {
             const actions = document.createElement('div');
             actions.className = 'mt-sm';
@@ -153,7 +181,7 @@ function renderReviews(reviews) {
         li.appendChild(commentsSection);
 
         reviewList.appendChild(li);
-    });
+    };
 }
 
 function addWriteReviewButton() {
@@ -427,4 +455,21 @@ function handleDeleteReview(review, listItemEl) {
         console.error('Delete review error:', err);
         alert('Unexpected error deleting review: ' + err.message);
     });
+}
+
+async function fetchPicturesForTrip(trip_id) {
+    try {
+        const response = await fetch('/api/getPicturesForTrip', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ trip_id })
+        });
+        const result = await response.json();
+        return result.data || [];
+    } catch (error) {
+        console.error('Error fetching pictures:', error);
+        return [];
+    }
 }

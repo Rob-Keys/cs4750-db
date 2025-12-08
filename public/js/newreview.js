@@ -36,6 +36,41 @@ function handleReviewForm() {
     const tripSelect = document.getElementById('trip-select');
     const ratingSelect = document.getElementById('review-rating');
     const reviewText = document.getElementById('review-text');
+    const reviewImages = document.getElementById('review-images');
+    let existingReviewId = null;
+
+    tripSelect.addEventListener('change', async function() {
+        const trip_id = tripSelect.value;
+        if (!trip_id) {
+            ratingSelect.value = '';
+            reviewText.value = '';
+            existingReviewId = null;
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/getReviewByTripId', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ trip_id })
+            });
+            const result = await response.json();
+
+            if (result.data) {
+                existingReviewId = result.data.review_id;
+                ratingSelect.value = result.data.rating;
+                reviewText.value = result.data.written_review || '';
+            } else {
+                existingReviewId = null;
+                ratingSelect.value = '';
+                reviewText.value = '';
+            }
+        } catch (error) {
+            console.error('Error fetching existing review:', error);
+        }
+    });
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -54,19 +89,34 @@ function handleReviewForm() {
             return;
         }
 
-        fetch('/api/createReview', {
+        const formData = new FormData();
+        formData.append('trip_id', trip_id);
+        formData.append('rating', rating);
+        formData.append('review_text', review_text);
+
+        if (existingReviewId) {
+            formData.append('review_id', existingReviewId);
+        }
+
+        if (reviewImages.files.length > 0) {
+            for (let i = 0; i < reviewImages.files.length; i++) {
+                formData.append('review_images[]', reviewImages.files[i]);
+            }
+        }
+
+        const endpoint = existingReviewId ? '/api/updateReview' : '/api/createReview';
+
+        fetch(endpoint, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ trip_id, rating, review_text })
+            body: formData
         })
         .then(response => response.json())
         .then(data => {
             if (data.error) {
                 alert('Error: ' + data.error);
             } else {
-                alert('Review submitted successfully!');
+                const message = existingReviewId ? 'Review updated successfully!' : 'Review submitted successfully!';
+                alert(message);
                 form.reset();
                 setTimeout(() => {
                     window.location.href = 'reviews.html';

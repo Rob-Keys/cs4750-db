@@ -50,6 +50,17 @@
                               placeholder="Write your review here..."></textarea>
                 </div>
 
+                <div class="form-row" style="flex-direction: column;">
+                    <label for="review-images" class="text-muted">Images (optional)</label>
+                    <input type="file"
+                           id="review-images"
+                           name="review-images"
+                           class="input"
+                           accept="image/*"
+                           multiple>
+                    <small class="text-muted" style="margin-top: 0.25rem;">Upload one or more images for your review</small>
+                </div>
+
                 <button type="submit"
                         id="submit-review"
                         class="button"

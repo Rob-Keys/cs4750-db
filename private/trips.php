@@ -45,7 +45,7 @@ function getTripsForUser($username) {
          LEFT JOIN locations l ON l.location_id = tl.location_id
          WHERE t.username = :username
          GROUP BY t.trip_id, t.trip_title, t.start_date, t.end_date
-         ORDER BY t.start_date DESC, t.trip_id DESC"
+         ORDER BY t.end_date DESC, t.trip_id DESC"
     );
     $stmt->bindValue(':username', $username);
     $stmt->execute();

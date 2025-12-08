@@ -10,6 +10,7 @@ require_once('../private/lists.php');
 require_once('../private/reviews.php');
 require_once('../private/trips.php');
 require_once('../private/users.php');
+require_once('../private/pictures.php');
 
 $db = get_db_connection();
 
@@ -85,10 +86,31 @@ switch ($segments[1]) {
         break;
     case 'createTrip':
         $trip_id = createTrip($post_data['trip_title'], $post_data['start_date'], $post_data['end_date'], $post_data['username']);
+
+        foreach ($post_data['location_ids'] as $location_id) {
+            if ($location_id !== '' && $location_id !== null) {
+                addTripStop($trip_id, (int)$location_id, null);
+            }
+        }
+
         send_json_response(['data' => ['trip_id' => $trip_id]]);
         break;
     case 'createReview':
-        $review_id = createReview($post_data['rating'], $post_data['review_text'], $post_data['trip_id']);
+        $rating = $_POST['rating'] ?? $post_data['rating'] ?? null;
+        $review_text = $_POST['review_text'] ?? $post_data['review_text'] ?? null;
+        $trip_id = $_POST['trip_id'] ?? $post_data['trip_id'] ?? null;
+
+        if (!$rating || !$trip_id) {
+            send_error('Missing required review fields', true);
+            exit();
+        }
+
+        $review_id = createReview($rating, $review_text, $trip_id);
+
+        if (isset($_FILES['review_images'])) {
+            processUploadedImages($trip_id, $_FILES['review_images']);
+        }
+
         send_json_response(['data' => ['review_id' => $review_id]]);
         break;
     case 'loginUser':
@@ -191,11 +213,52 @@ switch ($segments[1]) {
         break;
 
     case 'updateReview':
-        updateReview($post_data['review_id'] ?? null, $_SESSION['username'] ?? null, $post_data['rating'] ?? null, $post_data['review_text'] ?? '');
+        $review_id = $_POST['review_id'] ?? $post_data['review_id'] ?? null;
+        $rating = $_POST['rating'] ?? $post_data['rating'] ?? null;
+        $review_text = $_POST['review_text'] ?? $post_data['review_text'] ?? '';
+        $trip_id = $_POST['trip_id'] ?? $post_data['trip_id'] ?? null;
+
+        updateReview($review_id, $_SESSION['username'] ?? null, $rating, $review_text);
+
+        if (isset($_FILES['review_images']) && !empty($_FILES['review_images']['name'][0])) {
+            if ($trip_id) {
+                deleteAllPicturesForTrip($trip_id);
+                processUploadedImages($trip_id, $_FILES['review_images']);
+            }
+        }
+
         send_success();
         break;
     case 'deleteReview':
         deleteReview((int)$post_data['review_id'], $_SESSION['username'] ?? null);
+        send_success();
+        break;
+    case 'getReviewByTripId':
+        $review = getReviewByTripId((int)$post_data['trip_id']);
+        send_json_response(['data' => $review]);
+        break;
+    case 'getPicturesForTrip':
+        $pictures = getPicturesForTrip((int)$post_data['trip_id']);
+        send_json_response(['data' => $pictures]);
+        break;
+    case 'getPicture':
+        $picture_id = (int)($_GET['picture_id'] ?? 0);
+        $picture = getPictureData($picture_id);
+
+        if ($picture && $picture['pic_data']) {
+            header('Content-Type: image/jpeg');
+            echo $picture['pic_data'];
+        } else {
+            http_response_code(404);
+            echo 'Picture not found';
+        }
+        break;
+    case 'deleteTrip':
+        deleteTrip((int)$post_data['trip_id'], $_SESSION['username'] ?? null);
+        send_success();
+        break;
+    case 'deleteList':
+        deleteList((int)$post_data['list_id'], $_SESSION['username'] ?? null);
         send_success();
         break;
     default:
@@ -244,17 +307,18 @@ function initialize_db() {
     # The VARCHAR(255) fields are required to be VARCHAR instead of text because theyre Primary Keys or reference a PK
     $stmt = "CREATE TABLE IF NOT EXISTS users (
                 username VARCHAR(255) PRIMARY KEY,
-                email TEXT UNIQUE NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 first_name TEXT,
                 last_name TEXT
             );
             CREATE TABLE IF NOT EXISTS following (
+                follow_id INT AUTO_INCREMENT PRIMARY KEY,
                 follower_username VARCHAR(255),
                 followee_username VARCHAR(255),
-                PRIMARY KEY (follower_username, followee_username),
-                FOREIGN KEY (follower_username) REFERENCES users(username) ON DELETE CASCADE,
-                FOREIGN KEY (followee_username) REFERENCES users(username) ON DELETE CASCADE
+                UNIQUE (follower_username, followee_username),
+                FOREIGN KEY (followee_username) REFERENCES users(username) ON DELETE CASCADE,
+                FOREIGN KEY (follower_username) REFERENCES users(username) ON DELETE CASCADE
             );
             CREATE TABLE IF NOT EXISTS locations (
                 location_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -293,13 +357,21 @@ function initialize_db() {
                 trip_id INT,
                 FOREIGN KEY (trip_id) REFERENCES trips(trip_id) ON DELETE CASCADE
             );
+            CREATE TABLE IF NOT EXISTS pictures (
+                picture_id INT AUTO_INCREMENT PRIMARY KEY,
+                trip_id INT,
+                pic_data LONGBLOB,
+                pic_caption TEXT,
+                date_taken DATE,
+                FOREIGN KEY (trip_id) REFERENCES trips(trip_id) ON DELETE CASCADE
+            );
             CREATE TABLE IF NOT EXISTS comments (
                 comment_id INT AUTO_INCREMENT PRIMARY KEY,
                 comment_text TEXT NOT NULL,
                 date_written DATE,
-                username VARCHAR(255),
+                commenter_username VARCHAR(255),
                 review_id INT,
-                FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE,
+                FOREIGN KEY (commenter_username) REFERENCES users(username) ON DELETE CASCADE,
                 FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE
             );
             CREATE TABLE IF NOT EXISTS list (
@@ -408,7 +480,8 @@ function create_stored_procedures() {
 function destroy_db() {
     # TODO: Add check if youre logged in as an admin user
     global $db;
-    $stmt = "DROP TABLE IF EXISTS list_item;
+    $stmt = "SET FOREIGN_KEY_CHECKS = 0;
+            DROP TABLE IF EXISTS list_item;
             DROP TABLE IF EXISTS list;
             DROP TABLE IF EXISTS comments;
             DROP TABLE IF EXISTS reviews;
@@ -417,7 +490,9 @@ function destroy_db() {
             DROP TABLE IF EXISTS trips;
             DROP TABLE IF EXISTS locations;
             DROP TABLE IF EXISTS following;
-            DROP TABLE IF EXISTS users;";
+            DROP TABLE IF EXISTS users;
+            DROP TABLE IF EXISTS pictures;
+            SET FOREIGN_KEY_CHECKS = 1;";
     $db->exec($stmt);
 }
 
@@ -538,8 +613,8 @@ function populate_db() {
           (2,"bad trip","2025-11-28",18), 
           (5,"good trip","2025-11-30",19), 
           (5,"i met my wife","2024-04-08",20);
-          
-        INSERT INTO comments (comment_text, date_written, username, review_id) VALUES 
+        
+        INSERT INTO comments (comment_text, date_written, commenter_username, review_id) VALUES
           ("IAgree", "2026-02-03", "alex",1), 
           ("I Disagree", "2026-02-05", "coachodom",1), 
           ("I disagreeand I hate you", "2026-12-03", "dacount",2), 
@@ -554,5 +629,35 @@ function populate_db() {
           ("my favoritetrips ever", "JimRyan");
     ';
     $db->exec($sql);
+
+    // Convert our actual images to binary data for insertion into the database.
+    $image_path_1 = __DIR__ . '..\..\public\images\vacation1.jpg';
+    $image_path_2 = __DIR__ . '..\..\public\images\vacation2.jpg';
+    $image_path_3 = __DIR__ . '..\..\public\images\vacation3.jpg';
+    $image_path_4 = __DIR__ . '..\..\public\images\vacation4.jpg';
+
+    $stmt = $db->prepare(
+        "INSERT INTO pictures (trip_id, pic_data, pic_caption, date_taken)
+        VALUES (:trip_id, :pic_data, :pic_caption, :date_taken)"
+    );
+
+    function insert_pic($db, $stmt, $trip_id, $path, $caption, $date) {
+        $data = file_get_contents($path);
+
+        $stmt->bindValue(':trip_id', $trip_id);
+        $stmt->bindValue(':pic_data', $data, PDO::PARAM_LOB);
+        $stmt->bindValue(':pic_caption', $caption);
+        $stmt->bindValue(':date_taken',  $date);
+
+        $stmt->execute();
+    }
+
+    insert_pic($db, $stmt, 1, $image_path_1, 'The Beach!', '2025-07-25');
+    insert_pic($db, $stmt, 1, $image_path_2, 'Peru!', '2025-07-26');
+    insert_pic($db, $stmt, 3, $image_path_3, 'Downtown Nashville!', '2023-01-03');
+    insert_pic($db, $stmt, 8, $image_path_4, 'Scary highway.', '2024-11-07');
+
+    $stmt->closeCursor();
+
 }
 ?>

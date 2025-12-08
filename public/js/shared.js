@@ -51,3 +51,39 @@ export function getUserReviews() {
         return data.data;
     });
 }
+
+export function getUserFollowers() {
+    return fetch('/api/getFollowersForUser', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username: sessionStorage.getItem('username') })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error fetching followers: ' + data.error);
+            return [];
+        }
+        return data.data;
+    });
+}
+
+export function getUserFollowing() {
+    return fetch('/api/getFollowingForUser', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username: sessionStorage.getItem('username') })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error fetching following: ' + data.error);
+            return [];
+        }
+        return data.data;
+    });
+}
