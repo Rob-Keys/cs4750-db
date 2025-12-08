@@ -16,6 +16,9 @@ function createUser($username, $email, $password, $first_name, $last_name) {
     $stmt->bindValue(':last_name', $last_name);
     $stmt->execute();
     $stmt->closeCursor();
+
+    // Create MySQL user account with only SELECT and INSERT permissions
+    createMySQLUserAccount($username);
 }
 
 function loginUser($username, $password) {

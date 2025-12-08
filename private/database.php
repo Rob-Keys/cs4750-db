@@ -11,6 +11,7 @@ require_once('../private/reviews.php');
 require_once('../private/trips.php');
 require_once('../private/users.php');
 require_once('../private/pictures.php');
+require_once('../private/user_permissions.php');
 
 $db = get_db_connection();
 
@@ -410,7 +411,10 @@ function initialize_db() {
             ";
             
     $db->exec($stmt);
-    
+
+    // Create row-level security triggers
+    createRowLevelSecurityTriggers();
+
     $db->exec("DROP TRIGGER IF EXISTS trg_review_set_date");
     $db->exec("
         CREATE TRIGGER trg_review_set_date
@@ -489,6 +493,10 @@ function destroy_db() {
     }
 
     global $db;
+
+    // Drop all MySQL user accounts BEFORE dropping the users table
+    dropAllMySQLUserAccounts();
+
     $stmt = "SET FOREIGN_KEY_CHECKS = 0;
             DROP TABLE IF EXISTS list_item;
             DROP TABLE IF EXISTS list;
@@ -503,6 +511,8 @@ function destroy_db() {
             DROP TABLE IF EXISTS pictures;
             SET FOREIGN_KEY_CHECKS = 1;";
     $db->exec($stmt);
+
+    send_json_response(['data' => 'Database and user accounts destroyed successfully']);
 }
 
 function populate_db() {
@@ -684,6 +694,10 @@ function populate_db() {
 
     $stmt->closeCursor();
 
+    // Grant permissions to all users that were just populated
+    grantPermissionsToExistingUsers();
+
+    send_json_response(['data' => 'Database populated and permissions granted successfully']);
 }
 
 function display_db() {
