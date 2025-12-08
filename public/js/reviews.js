@@ -114,12 +114,29 @@ function renderReviews(reviews) {
         
         const reviewBody = document.createElement('div');
         reviewBody.className = 'review-text';
-        reviewBody.textContent = review.written_review || "(No review text provided)";
+        reviewBody.textContent = review.written_review || "(No reviw text provided)";
 
         li.appendChild(header);
         li.appendChild(meta);
         li.appendChild(reviewBody);
         li.appendChild(itinerary);
+
+        if (currentUser && currentUser === review.author) {
+            const actions = document.createElement('div');
+            actions.className = 'mt-sm';
+
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.className = 'button button-secondary';
+            editBtn.textContent = 'Edit Review';
+
+            editBtn.addEventListener('click', () => {
+                handleEditReview(review, reviewBody, ratingPill);
+            });
+
+            actions.appendChild(editBtn);
+            li.appendChild(actions);
+        }
 
         const commentsSection = buildCommentsSection(review.review_id);
         li.appendChild(commentsSection);
@@ -315,5 +332,58 @@ function addComment(reviewId, text) {
             throw new Error(data.error);
         }
         return data;
+    });
+}
+function handleEditReview(review, reviewBodyEl, ratingPillEl) {
+    const currentText = review.written_review || '';
+    const currentRating = review.rating;
+
+    const newText = prompt('Update your review text:', currentText);
+    if (newText === null) {
+        // User hit cancel
+        return;
+    }
+
+    const newRatingStr = prompt('Update rating (1-5):', String(currentRating));
+    if (newRatingStr === null) {
+        return;
+    }
+
+    const newRating = parseInt(newRatingStr, 10);
+    if (Number.isNaN(newRating) || newRating < 1 || newRating > 5) {
+        alert('Rating must be a number between 1 and 5.');
+        return;
+    }
+
+    fetch('/api/updateReview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            review_id: review.review_id,
+            rating: newRating,
+            review_text: newText
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error updating review: ' + data.error);
+            return;
+        }
+
+        review.rating = newRating;
+        review.written_review = newText;
+
+        ratingPillEl.textContent = `★ ${newRating}`;
+        reviewBodyEl.textContent =
+            newText && newText.trim() !== ""
+                ? newText
+                : "(No review text provided)";
+
+        alert('Review updated successfully!');
+    })
+    .catch(err => {
+        console.error('Update review error:', err);
+        alert('Unexpected error updating review: ' + err.message);
     });
 }

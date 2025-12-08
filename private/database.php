@@ -280,6 +280,27 @@ switch ($segments[1]) {
         $feed = getHomeFeed($username, $limit, $offset);
         send_json_response(['data' => $feed]);
         break;
+
+    case 'updateReview':
+        $username = $_SESSION['username'] ?? null;
+        if (!$username) {
+            send_error('Not logged in', true);
+            exit();
+        }
+
+        $review_id   = $post_data['review_id'] ?? null;
+        $rating      = $post_data['rating'] ?? null;
+        $review_text = $post_data['review_text'] ?? '';
+
+        if ($review_id === null || $rating === null) {
+            send_error('Missing review_id or rating', true);
+            exit();
+        }
+
+        updateReview($review_id, $username, (int)$rating, $review_text);
+        send_success();
+        break;
+    
     default:
         send_error('Unknown endpoint', false);
 }
@@ -844,20 +865,18 @@ function createReview($rating, $written_review, $trip_id) {
 }
 
 
-function updateReview($review_id, $owner_username, $rating, $written_review, $date_written) {
+function updateReview($review_id, $owner_username, $rating, $written_review) {
     global $db;
     $stmt = $db->prepare(
         "UPDATE reviews r
          JOIN trips t ON t.trip_id = r.trip_id
          SET r.rating = :rating,
-             r.written_review = :written_review,
-             r.date_written = :date_written
+             r.written_review = :written_review
          WHERE r.review_id = :review_id
            AND t.username = :owner_username"
     );
     $stmt->bindValue(':rating', $rating, PDO::PARAM_INT);
     $stmt->bindValue(':written_review', $written_review);
-    $stmt->bindValue(':date_written', $date_written);
     $stmt->bindValue(':review_id', $review_id, PDO::PARAM_INT);
     $stmt->bindValue(':owner_username', $owner_username);
     $stmt->execute();
