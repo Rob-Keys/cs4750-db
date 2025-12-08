@@ -507,6 +507,21 @@ function destroy_db() {
 
 function populate_db() {
     global $db;
+
+    // Check if all tables are empty before populating
+    $tables = ['users', 'following', 'trips', 'locations', 'transportation', 'trip_locations',
+               'reviews', 'comments', 'list', 'list_item', 'pictures'];
+
+    foreach ($tables as $table) {
+        $stmt = $db->query("SELECT COUNT(*) as count FROM `$table`");
+        $count = $stmt->fetch()['count'];
+        if ($count > 0) {
+            send_error("Cannot populate database: table '$table' already contains $count row(s). Tables must be empty.", true);
+            exit();
+        }
+    }
+
+    // All tables are empty, proceed with population
     $sql = '
         INSERT INTO users (username, email, password, first_name, last_name, is_admin) VALUES
           ("jill","jill@gmail.com", "jill", "Jill", "Smith", false),
