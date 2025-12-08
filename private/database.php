@@ -131,16 +131,17 @@ switch ($segments[1]) {
 
         send_json_response(['data' => ['list_id' => $list_id]]);
         break;
-    case 'getHomeFeed':
-        $username = $_SESSION['username'] ?? null;
+    case 'getHomeFeed': 
+        $username = $_SESSION['username'] ?? ($post_data['username'] ?? null);
+    
         if (!$username) {
             send_error("Not logged in", true);
             exit();
         }
-
+    
         $limit  = isset($post_data['limit'])  ? (int)$post_data['limit']  : 10;
         $offset = isset($post_data['offset']) ? (int)$post_data['offset'] : 0;
-
+    
         $feed = getHomeFeed($username, $limit, $offset);
         send_json_response(['data' => $feed]);
         break;
